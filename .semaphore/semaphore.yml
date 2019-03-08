@@ -1,0 +1,17 @@
+version: v1.0
+name: Build Pipeline
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+blocks:
+  - name: "Build"
+    task:
+      jobs:
+      - name: Run build
+        commands:
+          - checkout
+          - make test
+          - make analysis
+          - make audit
+          - make e2e
