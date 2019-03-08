@@ -1,0 +1,9 @@
+.gitignore
+.editorconfig
+bin
+dist
+docker-compose.yml
+Makefile
+node_modules
+README.md
+reports
