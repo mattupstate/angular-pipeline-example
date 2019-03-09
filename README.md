@@ -106,6 +106,12 @@ Optionally, one can run:
 
 Which will execute the full pipeline and publish the image to the public Docker image registry. The image available as `mattupstate/angular-pipeline-example:0.1.0`
 
+## Semaphore CI Integration
+
+Once I completed the `make` + `docker` based pipeline, I went looking for a hosted CI service that I might be able to run it with. Almost immediately I found [semaphoreci.com](semaphoreci.com). Once I had setup the project with Semaphore, it took only a few tweaks to the pipeline to make it work. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine. Couldn't really ask for more!
+
+The Semaphore configuration is located at `.semaphore/semaphore.yml`
+
 ## Notes
 
 Finally, here are some notes that describe some of the underlying details.
