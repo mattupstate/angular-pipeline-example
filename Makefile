@@ -15,6 +15,7 @@ DIST_ARCHIVE_CONTAINER_NAME ?= $(PROJECT_NAME)-dist
 DIST_ARCHIVE_SRC_DIR ?= /usr/share/app/dist
 REPORTS_DIR ?= ./reports
 COVERAGE_DIR ?= $(REPORTS_DIR)/coverage
+LCOV_FILE ?= $(COVERAGE_DIR)/lcov.info
 COVERAGE_SRC_DIR ?= /usr/src/app/reports/coverage
 ANALYSIS_DIR ?= $(REPORTS_DIR)/lint
 ANALSYS_SRC_DIR ?= /usr/src/app/reports/lint
@@ -45,7 +46,7 @@ audit: test-image
 analysis: test-image
 	docker rm $(ANALYSIS_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(ANALYSIS_DIR)
-	mkdir -p $(ANALYSIS_DIR)
+	mkdir -p $$(dirname $(ANALYSIS_DIR))
 	docker run --name $(ANALYSIS_CONTAINER_NAME) $(TEST_DOCKER_IMAGE) npm run lint-ci
 	docker cp $(ANALYSIS_CONTAINER_NAME):$(ANALSYS_SRC_DIR) $(ANALYSIS_DIR)
 
@@ -53,9 +54,11 @@ analysis: test-image
 test: test-image
 	docker rm $(TEST_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(COVERAGE_DIR)
-	mkdir -p $(COVERAGE_DIR)
+	mkdir -p $$(dirname $(COVERAGE_DIR))
+	[[ "$$CI" == "true" ]] && ./bin/cc-test-reporter before-build || :
 	docker run --name $(TEST_CONTAINER_NAME) --security-opt seccomp=$(TEST_DOCKER_SECCOMP_FILE) $(TEST_DOCKER_IMAGE) npm run test-ci
 	docker cp $(TEST_CONTAINER_NAME):$(COVERAGE_SRC_DIR) $(COVERAGE_DIR)
+	[[ "$$CI" == "true" ]] && ./bin/cc-test-reporter format-coverage -o - -t lcov -p /usr/src/app $(COVERAGE_DIR)/lcov.info | ./bin/cc-test-reporter upload-coverage -i - || :
 
 .PHONY: e2e
 e2e: test-image dist-image

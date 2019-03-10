@@ -7,11 +7,13 @@ agent:
 blocks:
   - name: "Build"
     task:
+      secrets:
+        - name: angular-pipeline-example-secrets
       jobs:
       - name: Run build
         commands:
           - checkout
-          - make test
+          - GIT_COMMIT_SHA=$SEMAPHORE_GIT_SHA GIT_BRANCH=$SEMAPHORE_GIT_BRANCH make test
           - make analysis
           - make audit
           - make e2e
