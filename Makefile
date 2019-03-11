@@ -1,7 +1,5 @@
 SHELL := /bin/bash
-ifndef $(CI)
-CI = false
-endif
+CI ?= false
 PROJECT_NAME ?= $(shell jq -r '.name' package.json)
 PROJECT_VERSION ?= $(shell jq -r '.version' package.json)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
