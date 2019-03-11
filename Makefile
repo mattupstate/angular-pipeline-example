@@ -50,7 +50,7 @@ audit: test-image
 analysis: test-image
 	@docker rm $(ANALYSIS_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(ANALYSIS_DIR)
-	mkdir -p $(shell dirname $(ANALYSIS_DIR))
+	mkdir -p $(dir $(ANALYSIS_DIR))
 	docker run --name $(ANALYSIS_CONTAINER_NAME) $(TEST_IMAGE) npm run lint-ci
 	docker cp $(ANALYSIS_CONTAINER_NAME):$(ANALSYS_SRC_DIR) $(ANALYSIS_DIR)
 
@@ -58,7 +58,7 @@ analysis: test-image
 test: test-image
 	@docker rm $(TEST_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(COVERAGE_DIR)
-	mkdir -p $(shell dirname $(COVERAGE_DIR))
+	mkdir -p $(dir $(COVERAGE_DIR))
 	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter before-build || :
 	docker run --name $(TEST_CONTAINER_NAME) --security-opt seccomp=$(TEST_CONTAINER_SECCOMP_FILE) $(TEST_IMAGE) npm run test-ci
 	docker cp $(TEST_CONTAINER_NAME):$(COVERAGE_SRC_DIR) $(COVERAGE_DIR)
