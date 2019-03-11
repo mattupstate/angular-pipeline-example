@@ -13,7 +13,9 @@ blocks:
       - name: Run build
         commands:
           - checkout
-          - GIT_COMMIT_SHA=$SEMAPHORE_GIT_SHA GIT_BRANCH=$SEMAPHORE_GIT_BRANCH make test
+          - echo $$DOCKER_PASSWORD | docker login --username "$$DOCKER_USERNAME" --password-stdin;
+          - make test
           - make analysis
           - make audit
           - make e2e
+          - make publish-image
