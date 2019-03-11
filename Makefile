@@ -27,11 +27,11 @@ ANALSYS_SRC_DIR ?= /usr/src/app/reports/lint
 
 .PHONY: test-image
 test-image:
-	docker build --pull --target $(TEST_DOCKER_TARGET) --tag $(TEST_DOCKER_IMAGE) .
+	docker build --pull --quiet --target $(TEST_DOCKER_TARGET) --tag $(TEST_DOCKER_IMAGE) .
 
 .PHONY: dist-image
 dist-image:
-	docker build --pull --target $(DIST_DOCKER_TARGET) --tag $(DIST_DOCKER_IMAGE) .
+	docker build --pull --quiet --target $(DIST_DOCKER_TARGET) --tag $(DIST_DOCKER_IMAGE) .
 
 .PHONY: dist-archive
 dist-archive: dist-image
