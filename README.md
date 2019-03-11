@@ -1,6 +1,6 @@
 # Angular CI Pipeline Example
 
-This repository is the artifact of my experience as I taught myself how to setup an Angular project using the popular CLI tool and provide additional tooling to contributors that runs a build pipeline as it might be run in a Continuous Integration context.
+This repository is the artifact of my experience as I taught myself how to setup an Angular project using the popular CLI tool and provide additional tooling to contributors that can run the build pipeline with minimal differences between the local development environment and a Continuous Integration context.
 
 As part of this effort I hope to use a (subjectively) minimal amount of tools that are (subjectively) popular and (subjectively) easy to install such that it can (arguably) be replicated in most modern software development organizations.
 
@@ -106,11 +106,17 @@ Optionally, one can run:
 
 Which will execute the full pipeline and publish the image to the public Docker image registry. The image available as `mattupstate/angular-pipeline-example:0.1.0`
 
-## Semaphore CI Integration
+## Public CI Integration
 
-Once I completed the `make` + `docker` based pipeline, I went looking for a hosted CI service that I might be able to run it with. Almost immediately I found [semaphoreci.com](semaphoreci.com). Once I had setup the project with Semaphore, it took only a few tweaks to the pipeline to make it work. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine. Couldn't really ask for more!
+Once I completed the `make` + `docker` based pipeline I integrated the build pipeline with a few public CI services. The following is a brief description of each.
 
-The Semaphore configuration is located at `.semaphore/semaphore.yml`
+### Semaphore CI
+
+[Semaphore CI](semaphoreci.com) is a public CI service. It took only a few tweaks to the pipeline to use the same tooling I use locally. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine, which is precisely what I was looking. Couldn't really ask for more! The Semaphore configuration is located at `.semaphore/semaphore.yml`.
+
+### Code Climate
+
+[Code Climate](https://codeclimate.com) is a public code quality service. Having learned about it recently (I used to use [coveralls.io](coveralls.io)) I figured I'd try it out. It's relatively simple to setup. I've integrated their test reporter tool in the `make test` target. Execution of the test reporter is conditional on being in the CI context. View the project's public Code Climate page [here](https://codeclimate.com/github/mattupstate/angular-pipeline-example).
 
 ## Notes
 
