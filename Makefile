@@ -51,8 +51,7 @@ analysis: test-image
 	@docker rm $(ANALYSIS_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(ANALYSIS_DIR)
 	mkdir -p $(dir $(ANALYSIS_DIR))
-	docker run --name $(ANALYSIS_CONTAINER_NAME) $(TEST_IMAGE) npm run lint-ci
-	docker cp $(ANALYSIS_CONTAINER_NAME):$(ANALSYS_SRC_DIR) $(ANALYSIS_DIR)
+	docker run --name $(ANALYSIS_CONTAINER_NAME) $(TEST_IMAGE) npm run lint
 
 .PHONY: test
 test: test-image

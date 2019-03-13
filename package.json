@@ -9,7 +9,6 @@
     "test": "ng test",
     "e2e": "ng e2e",
     "test-ci": "ng test -c ci",
-    "lint-ci": "ng lint -c ci > reports/lint/all.txt",
     "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities.moderate + .metadata.vulnerabilities.high + .metadata.vulnerabilities.critical') = \"0\" ] || npm audit",
     "build-ci": "ng build -c production",
     "e2e-ci": "ng e2e -c ci",
