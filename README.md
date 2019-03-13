@@ -97,7 +97,7 @@ Assuming all steps completed successfully, the name of the Docker image that was
 ```
 ...
 Build completed:
-DOCKER_IMAGE=angular-pipline-example:0.1.0
+DOCKER_IMAGE=angular-pipeline-example:0.1.0
 ```
 
 Optionally, one can run:
@@ -154,7 +154,7 @@ I initially generated the Angular project using the Angular CLI. However, I adde
 
 #### `angular.json`
 
-- Changed the `outputPath` value to simply be `dist` instead of `dist/angular-pipline-example` to avoid having to deal with a named directory in build tooling.
+- Changed the `outputPath` value to simply be `dist` instead of `dist/angular-pipeline-example` to avoid having to deal with a named directory in build tooling.
 - Added `"codeCoverage": true` to the default `test` options.
 - Removed the `production` configurations for all but for `build` as I found them to be unnecessary.
 - Set `"sourceMap": true` in the `build:production` configuration because I believe shipping source maps to production is a good thing.

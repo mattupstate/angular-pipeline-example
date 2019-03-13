@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular-pipline-example": {
+    "angular-pipeline-example": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -58,13 +58,13 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "angular-pipline-example:build"
+            "browserTarget": "angular-pipeline-example:build"
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "angular-pipline-example:build"
+            "browserTarget": "angular-pipeline-example:build"
           }
         },
         "test": {
@@ -111,7 +111,7 @@
         }
       }
     },
-    "angular-pipline-example-e2e": {
+    "angular-pipeline-example-e2e": {
       "root": "e2e/",
       "projectType": "application",
       "prefix": "",
@@ -146,5 +146,5 @@
       }
     }
   },
-  "defaultProject": "angular-pipline-example"
+  "defaultProject": "angular-pipeline-example"
 }
