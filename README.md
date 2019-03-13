@@ -64,9 +64,9 @@ The `npm run test-ci` script invokes `ng lint -c ci` which runs the test suite u
 
 The `make analysis` step runs the Angular linting static analysis tool in the test execution context. Under the hood it runs the following `docker` command:
 
-    $ docker run --name $(TEST_CONTAINER_NAME) $(TEST_DOCKER_IMAGE_TAG) npm run lint-ci
+    $ docker run --name $(TEST_CONTAINER_NAME) $(TEST_DOCKER_IMAGE_TAG) npm run lint
 
-The `npm run lint-ci` script invokes `ng lint -c ci > reports/lint/all.txt` which runs the linting tool using the `lint:ci` configuration expressed in the `angular.json`. The configuration instructs the linting tool to produce a machine readable report the output is written to `reports/lint/all.txt`.
+The `npm run lint` script invokes `ng lint` which runs the linting tool using the default configuration expressed in the `angular.json`. The configuration instructs the linting tool to produce a human readable report using the the `codeFrame` format.
 
 ### `make audit`
 
