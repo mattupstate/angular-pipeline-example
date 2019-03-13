@@ -2,20 +2,18 @@
 // https://github.com/angular/protractor/blob/master/lib/config.ts
 
 const { SpecReporter } = require('jasmine-spec-reporter');
+const AllureReporter = require('jasmine-allure-reporter');
+
+const reporters = [
+  new AllureReporter({ resultsDir: './reports/e2e/allure' }),
+  new SpecReporter({spec: { displayStacktrace: true }})
+];
 
 exports.config = {
-  allScriptsTimeout: 180000,
-  getPageTimeout: 180000,
+  allScriptsTimeout: 11000,
   specs: [
     './src/**/*.e2e-spec.ts'
   ],
-  seleniumAddress: 'http://hub:4444/wd/hub',
-  multiCapabilities: [{
-    browserName: 'firefox'
-  }, {
-    browserName: 'chrome'
-  }],
-  baseUrl: 'http://webapp/',
   framework: 'jasmine',
   jasmineNodeOpts: {
     showColors: true,
@@ -26,6 +24,6 @@ exports.config = {
     require('ts-node').register({
       project: require('path').join(__dirname, './tsconfig.e2e.json')
     });
-    jasmine.getEnv().addReporter(new SpecReporter({ spec: { displayStacktrace: true } }));
+    reporters.forEach(reporter => jasmine.getEnv().addReporter(reporter));
   }
 };

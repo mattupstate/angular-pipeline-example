@@ -3,10 +3,12 @@
 
 const { config } = require('./protractor.shared.conf');
 
-config.baseUrl = 'http://localhost:4200/';
-config.directConnect = true;
-config.capabilities = {
-  'browserName': 'chrome'
-};
+config.baseUrl = 'http://webapp/';
+config.seleniumAddress = 'http://hub:4444/wd/hub';
+config.multiCapabilities = [{
+  browserName: 'firefox'
+}, {
+  browserName: 'chrome'
+}];
 
 exports.config = config;

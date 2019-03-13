@@ -124,7 +124,7 @@
           },
           "configurations": {
             "ci": {
-              "protractorConfig": "e2e/protractor-ci.conf.js",
+              "protractorConfig": "e2e/protractor.ci.conf.js",
               "devServerTarget": ""
             }
           }

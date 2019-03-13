@@ -21,11 +21,12 @@ DIST_ARCHIVE_FILENAME ?= dist.tar
 DIST_ARCHIVE_CONTAINER_NAME ?= $(PROJECT_NAME)-dist
 DIST_ARCHIVE_SRC_DIR ?= /usr/share/app/dist
 REPORTS_DIR ?= ./reports
+E2E_REPORTS_DIR ?= $(REPORTS_DIR)/e2e
 COVERAGE_DIR ?= $(REPORTS_DIR)/coverage
 ANALYSIS_DIR ?= $(REPORTS_DIR)/lint
 LCOV_FILE ?= $(COVERAGE_DIR)/lcov.info
 COVERAGE_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/coverage
-ANALSYS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/lint
+E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
 
 .PHONY: test-image
 test-image:
@@ -65,8 +66,11 @@ test: test-image
 
 .PHONY: e2e
 e2e: test-image dist-image
+	rm -rf $(E2E_REPORTS_DIR)
+	mkdir -p $(dir $(E2E_REPORTS_DIR))
 	SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose down || :
 	SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
+	docker cp $$(SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose ps -q protractor):$(E2E_REPORTS_SRC_DIR) $(E2E_REPORTS_DIR)
 
 .PHONY: e2e-debug
 e2e-debug: dist-image

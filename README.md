@@ -163,7 +163,7 @@ I initially generated the Angular project using the Angular CLI. However, I adde
 
 - Changed the code coverage report to be saved to `../reports/coverage'
 
-#### `e2e/protractor-ci.conf.js`
+#### `e2e/protractor.ci.conf.js`
 
 This is a new file that contains Protractor configuration for the CI context. Reference to this file is made in `angular.json` under the `e2e:ci` configuration. Note the following configuration keys and their values:
 
