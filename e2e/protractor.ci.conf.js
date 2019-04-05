@@ -3,7 +3,7 @@
 
 const { config } = require('./protractor.shared.conf');
 
-config.baseUrl = 'http://webapp/';
+config.baseUrl = 'http://webapp/en-US/';
 config.seleniumAddress = 'http://hub:4444/wd/hub';
 config.multiCapabilities = [{
   browserName: 'firefox'

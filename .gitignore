@@ -1,5 +1,7 @@
+.envrc
+.semaphore/secrets.yml
+.terraform/
+dist.tar
 dist/
 node_modules/
 reports/
-dist.tar
-.semaphore/secrets.yml

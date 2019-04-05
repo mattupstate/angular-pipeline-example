@@ -1,5 +1,10 @@
+.cache
+.envrc
+.git
 .gitignore
 .editorconfig
+.semaphore
+.terraform
 bin
 dist
 docker-compose.yml
