@@ -18,7 +18,7 @@ blocks:
           - make analysis
           - make audit
           - make e2e
-          - [ "$SEMAPHORE_GIT_BRANCH" = "master" ] && make dist-image-push
-          - [ "$SEMAPHORE_GIT_BRANCH" = "master" ] && make cloud-resources
+          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make dist-image-push; fi
+          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make cloud-resources; fi
           - make deploy-version
-          - [ "$SEMAPHORE_GIT_BRANCH" = "master" ] && make deploy-latest
+          - if "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make deploy-latest; fi
