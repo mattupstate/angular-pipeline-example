@@ -18,4 +18,7 @@ blocks:
           - make analysis
           - make audit
           - make e2e
-          - make publish-image
+          - [ "$SEMAPHORE_GIT_BRANCH" = "master" ] && make dist-image-push
+          - [ "$SEMAPHORE_GIT_BRANCH" = "master" ] && make cloud-resources
+          - make deploy-version
+          - [ "$SEMAPHORE_GIT_BRANCH" = "master" ] && make deploy-latest
