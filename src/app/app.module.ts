@@ -1,36 +1,27 @@
-import { NgModule, APP_INITIALIZER } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { LoggerModule, NgxLoggerLevel, NGXLogger } from 'ngx-logger';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { RuntimeConfigService } from './runtime-config.service';
-import { AnalyticsService } from '../analytics';
-import { environment } from '../environments/environment';
-
-const appInitializerFn = (appConfig: RuntimeConfigService) => {
-  return () => {
-      return appConfig.load();
-  };
-};
+import { AboutComponent } from './about/about.component';
+import { HomeComponent } from './home/home.component';
+import { appInitializer, routerAnalyticsProvider, segmentAnalyticsProvider } from './app.module.providers';
+import { PageTitleService } from './page-title.service';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AboutComponent,
+    AppComponent,
+    HomeComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule,
-    LoggerModule.forRoot({level: environment.logLevel})
+    AppRoutingModule
   ],
   providers: [
-    {
-      provide: APP_INITIALIZER,
-      useFactory: appInitializerFn,
-      deps: [RuntimeConfigService],
-      multi: true
-    },
-    AnalyticsService,
-    RuntimeConfigService
+    appInitializer,
+    segmentAnalyticsProvider,
+    routerAnalyticsProvider,
+    PageTitleService
   ],
   bootstrap: [AppComponent]
 })

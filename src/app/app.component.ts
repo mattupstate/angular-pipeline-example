@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, LOCALE_ID, Inject } from '@angular/core';
+import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
+import { PageTitleService } from './page-title.service';
 
 @Component({
   selector: 'app-root',
@@ -6,7 +8,15 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'angular-pipeline-example';
+  localeId = 'en-US';
 
-  constructor() { }
+  constructor(
+    pageTitle: PageTitleService,
+    navAnalaytics: NavigationAnalyticsService,
+    @Inject(LOCALE_ID) localeId: string
+  ) {
+    this.localeId = localeId;
+    pageTitle.startTracking();
+    navAnalaytics.startTracking();
+  }
 }

@@ -1,6 +1,11 @@
-import { NgxLoggerLevel } from 'ngx-logger';
-
 export const environment = {
   production: true,
-  logLevel: NgxLoggerLevel.OFF
+  segment: {
+    writeKey: '6hFmeOfdLCTWqyoU6JBEJ01ytIiyPPgm',
+    options: {
+      integrations: {
+        All: true
+      }
+    }
+  }
 };

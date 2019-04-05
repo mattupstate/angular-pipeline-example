@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en" datatype="plaintext" original="ng2.template">
+    <body>
+      <trans-unit id="aboutPageTitle" datatype="html">
+        <source>About</source>
+        <target>Acerca de</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/about/about.component.html</context>
+          <context context-type="linenumber">1</context>
+        </context-group>
+        <note priority="1" from="description">About page title</note>
+      </trans-unit>
+      <trans-unit id="aboutPageContent" datatype="html">
+        <source>This is a boilerplate project. It is a work in progress.</source>
+        <target>Este es un proyecto repetitivo. Es un trabajo en progreso.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/about/about.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+        <note priority="1" from="description">About page content</note>
+      </trans-unit>
+      <trans-unit id="appNavLanguageEnglish" datatype="html">
+        <source>English</source>
+        <target>Inglés</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">3</context>
+        </context-group>
+        <note priority="1" from="description">English button text in language selector</note>
+      </trans-unit>
+      <trans-unit id="appNavLanguageSpanish" datatype="html">
+        <source>Spanish</source>
+        <target>Español</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">4</context>
+        </context-group>
+        <note priority="1" from="description">Spanish button text in language selector</note>
+      </trans-unit>
+      <trans-unit id="appNavItemHome" datatype="html">
+        <source>Home</source>
+        <target>Casa</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">7</context>
+        </context-group>
+        <note priority="1" from="description">Home button text in the app nav</note>
+      </trans-unit>
+      <trans-unit id="appNavItemAbout" datatype="html">
+        <source>About</source>
+        <target>Acerca de</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/app.component.html</context>
+          <context context-type="linenumber">8</context>
+        </context-group>
+        <note priority="1" from="description">About button text in the app nav</note>
+      </trans-unit>
+      <trans-unit id="homePageTitle" datatype="html">
+        <source>Home</source>
+        <target>Casa</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/home/home.component.html</context>
+          <context context-type="linenumber">1</context>
+        </context-group>
+        <note priority="1" from="description">Home page title</note>
+      </trans-unit>
+      <trans-unit id="homePageContent" datatype="html">
+        <source>Welcome to angular-pipeline-example on the web</source>
+        <target>Bienvenido a angular-pipeline-example en la web.</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">app/home/home.component.html</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+        <note priority="1" from="description">Home page content</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
