@@ -44,8 +44,18 @@ USER testuser
 
 
 FROM base AS test
+
+ARG git_branch
+ARG git_commit_sha
+ARG git_is_dirty
+
+ENV GIT_BRANCH=${git_branch} \
+    GIT_COMMIT_SHA=${git_commit_sha} \
+    GIT_IS_DIRTY=${git_is_dirty}
+
 WORKDIR /usr/src/app
 
+COPY bin ./bin
 COPY package.json package-lock.json ./
 RUN npm ci || cat npm-debug.log
 RUN npm run update-webdriver-ci

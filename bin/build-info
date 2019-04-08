@@ -16,15 +16,15 @@ function getProjectSemver() {
 }
 
 function getGitBranch() {
-  return exec('git rev-parse --abbrev-ref HEAD');
+  return process.env.GIT_BRANCH || exec('git rev-parse --abbrev-ref HEAD');
 }
 
 function getGitCommitHash() {
-  return exec('git rev-parse --verify --short HEAD');
+  return process.env.GIT_COMMIT_SHA || exec('git rev-parse --verify --short HEAD');
 }
 
 function isGitDirty() {
-  return exec('git diff --quiet && echo "true" || echo "false"') === 'true';
+  return process.env.GIT_IS_DIRTY || exec('git diff --quiet && echo "true" || echo "false"') === 'true';
 }
 
 function addVersionClassSourceFile(project, filename) {
@@ -75,12 +75,10 @@ function main(versionFilename) {
 
   project
     .getSourceFiles()
-    .map(sourceFile => {
+    .forEach(sourceFile => {
       sourceFile.formatText({
         indentSize: 2
       });
-    })
-    .forEach(sourceFile => {
       sourceFile.saveSync();
       console.log(
         `The following class was written to: \n${sourceFile.getFilePath()}\n`

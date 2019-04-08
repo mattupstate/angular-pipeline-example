@@ -3,7 +3,9 @@ CI ?= false
 PROJECT_NAME ?= $(shell jq -r '.name' package.json)
 PROJECT_VERSION ?= $(shell jq -r '.version' package.json)
 GIT_COMMIT_SHA ?= $(shell git rev-parse --verify --short HEAD)
-GIT_IS_CLEAN ?= $(shell git diff --quiet && echo "true" || echo "false")
+GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
+GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
+DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
 IMAGE_BASE_NAME ?= mattupstate/$(PROJECT_NAME)
 TEST_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)-test
 TEST_IMAGE_BUILD_TARGET ?= test
@@ -35,15 +37,15 @@ E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
 
 .PHONY: test-image
 test-image:
-	docker build --pull --quiet --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
+	docker build --pull --quiet $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
 
 .PHONY: dist-image
 dist-image:
-	docker build --pull --quiet --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
+	docker build --pull --quiet $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: deploy-image
 deploy-image:
-	docker build --pull --quiet --target $(DEPLOY_IMAGE_BUILD_TARGET) --tag $(DEPLOY_IMAGE) .
+	docker build --pull --quiet $(DOCKER_BUILD_ARGS) --target $(DEPLOY_IMAGE_BUILD_TARGET) --tag $(DEPLOY_IMAGE) .
 
 .PHONY: dist-archive
 dist-archive: dist-image
