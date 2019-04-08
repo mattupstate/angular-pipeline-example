@@ -1,3 +1,4 @@
+*.generated.ts
 .envrc
 .semaphore/secrets.yml
 .terraform/
@@ -5,3 +6,4 @@ dist.tar
 dist/
 node_modules/
 reports/
+src/environments/build-info.ts

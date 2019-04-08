@@ -1,6 +1,7 @@
 import { Component, LOCALE_ID, Inject } from '@angular/core';
 import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
 import { PageTitleService } from './page-title.service';
+import { BuildInfo } from '../environments/build-info';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +10,8 @@ import { PageTitleService } from './page-title.service';
 })
 export class AppComponent {
   localeId = 'en-US';
+  semVer = BuildInfo.semVer;
+  gitCommit = BuildInfo.gitCommitHash;
 
   constructor(
     pageTitle: PageTitleService,
