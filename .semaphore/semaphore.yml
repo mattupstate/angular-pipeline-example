@@ -21,4 +21,4 @@ blocks:
           - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make dist-image-push; fi
           - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make cloud-resources; fi
           - make deploy-version
-          - if "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make deploy-latest; fi
+          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make deploy-latest; fi
