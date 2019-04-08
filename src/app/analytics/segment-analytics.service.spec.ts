@@ -1,4 +1,5 @@
 import { SegmentAnalytics } from './segment-analytics.service';
+import { BuildInfo } from 'src/environments/build-info';
 
 describe('SegmentAnalytics', () => {
   const localeId = 'en-US';
@@ -12,7 +13,7 @@ describe('SegmentAnalytics', () => {
       track: (event: string, properties: any) => {},
       identify: (userId: string, properties: any) => {}
     };
-    service = new SegmentAnalytics(analyticsMock, localeId, false);
+    service = new SegmentAnalytics(analyticsMock, {localeId}, false);
   });
 
   it('should call analytics.page', () => {

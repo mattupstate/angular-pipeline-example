@@ -1,13 +1,15 @@
+import { BuildInfo } from '../../environments/build-info';
+
 export class SegmentAnalytics {
-  constructor(private analytics: any, private localeId: string, debug = false) {
+  constructor(private analytics: any, private staticProperties: object, debug = false) {
     if (debug) {
       this.analytics.debug();
     }
   }
 
-  private applyStaticProperties(properties: any) {
+  private applyStaticProperties(properties: object) {
     return {
-      localeId: this.localeId,
+      ...this.staticProperties,
       ...properties
     };
   }

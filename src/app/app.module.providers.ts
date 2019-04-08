@@ -3,6 +3,7 @@ import { NavigationAnalyticsService } from './analytics/navigation-analytics.ser
 import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
 import { environment } from '../environments/environment';
+import { BuildInfo } from 'src/environments/build-info';
 
 declare var window: any;
 
@@ -17,7 +18,7 @@ const appInitializerFactory = () => {
 };
 
 const segmentAnalyticsFactory = (localeId: string) => {
-  return new SegmentAnalytics(window.analytics, localeId, !environment.production);
+  return new SegmentAnalytics(window.analytics, {localeId, ...BuildInfo}, !environment.production);
 };
 
 export const appInitializer = {

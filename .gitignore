@@ -1,6 +1,5 @@
 *.generated.ts
 .envrc
-.semaphore/secrets.yml
 .terraform/
 dist.tar
 dist/
