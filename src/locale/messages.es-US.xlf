@@ -22,7 +22,7 @@
       </trans-unit>
       <trans-unit id="appNavLanguageEnglish" datatype="html">
         <source>English</source>
-        <target>Inglés</target>
+        <target>English</target>
         <context-group purpose="location">
           <context context-type="sourcefile">app/app.component.html</context>
           <context context-type="linenumber">3</context>
@@ -30,7 +30,7 @@
         <note priority="1" from="description">English button text in language selector</note>
       </trans-unit>
       <trans-unit id="appNavLanguageSpanish" datatype="html">
-        <source>Spanish</source>
+        <source>Español</source>
         <target>Español</target>
         <context-group purpose="location">
           <context context-type="sourcefile">app/app.component.html</context>
