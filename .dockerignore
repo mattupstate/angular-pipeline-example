@@ -11,3 +11,4 @@ Makefile
 node_modules
 README.md
 reports
+src/environments/build-info.ts

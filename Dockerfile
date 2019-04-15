@@ -1,5 +1,4 @@
 FROM node:10.15.1-stretch AS base
-
 RUN apt-get update \
     && apt-get install -y \
       apt-transport-https \
@@ -28,7 +27,6 @@ RUN apt-get update \
       --no-install-recommends \
     && apt-get purge --auto-remove -y gnupg \
     && rm -rf /var/lib/apt/lists/*
-
 RUN groupadd -r testuser \
     && useradd -r -g testuser -G audio,video testuser \
     && mkdir -p /home/testuser \
@@ -39,31 +37,25 @@ RUN groupadd -r testuser \
     && mkdir -p /usr/src/app/reports/lint \
     && chown -R testuser:testuser /usr/src/app \
     && chown -R testuser:testuser /usr/share/app
-
 USER testuser
 
 
 FROM base AS test
-
 ARG git_branch
 ARG git_commit_sha
 ARG git_is_dirty
-
 ENV GIT_BRANCH=${git_branch} \
     GIT_COMMIT_SHA=${git_commit_sha} \
     GIT_IS_DIRTY=${git_is_dirty}
-
 WORKDIR /usr/src/app
-
-COPY bin ./bin
-COPY package.json package-lock.json ./
-RUN npm ci || cat npm-debug.log
+COPY --chown=testuser:testuser bin ./bin
+COPY --chown=testuser:testuser package.json package-lock.json ./
+RUN npm ci
 RUN npm run update-webdriver-ci
-
-COPY angular.json tsconfig.json tslint.json ./
-COPY etc ./etc
-COPY src ./src
-COPY e2e ./e2e
+COPY --chown=testuser:testuser angular.json tsconfig.json tslint.json ./
+COPY --chown=testuser:testuser etc ./etc
+COPY --chown=testuser:testuser src ./src
+COPY --chown=testuser:testuser e2e ./e2e
 
 
 FROM test AS build
@@ -71,11 +63,11 @@ RUN npm run build-prod
 
 
 FROM nginx:1.14.2-alpine AS dist
-COPY etc/nginx/conf.d /etc/nginx/conf.d
-COPY --from=build /usr/src/app/dist /usr/share/app/dist
+COPY --chown=nginx:nginx etc/nginx/conf.d /etc/nginx/conf.d
+COPY --chown=nginx:nginx --from=build /usr/src/app/dist /usr/share/app/dist
 
 
 FROM build as deploy
 WORKDIR /usr/share/app
-COPY --from=build /usr/src/app/dist /usr/share/app/dist
-COPY --from=test /usr/src/app/etc/terraform /usr/share/app/terraform
+COPY --chown=testuser:testuser --from=build /usr/src/app/dist /usr/share/app/dist
+COPY --chown=testuser:testuser --from=test /usr/src/app/etc/terraform /usr/share/app/terraform
