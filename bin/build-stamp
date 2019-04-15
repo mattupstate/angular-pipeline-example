@@ -24,7 +24,7 @@ function getGitCommitHash() {
 }
 
 function isGitDirty() {
-  return process.env.GIT_IS_DIRTY || exec('git diff --quiet && echo "true" || echo "false"') === 'true';
+  return process.env.GIT_IS_DIRTY || exec('git diff --quiet && echo "true" || echo "false"') === 'false';
 }
 
 function addVersionClassSourceFile(project, filename) {
