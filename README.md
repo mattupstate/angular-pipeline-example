@@ -223,7 +223,7 @@ output "ci_iam_user_access_key_encrypted_secret" {
 
 ### Fastly Usage
 
-Fastly is a CDN, or "edge", service that can be used as a rudimentary reverse proxy. In this case, I have provided Fastyl with a custom Varnish configuration that does a few unique things.
+Fastly is a CDN, or "edge", service that offers quite a few features. In this example application it is used as a rudimentary reverse proxy. However, it could also be useful for a number of other reasons, such as A/B testing. The following is a description of some of the unique Varnish configuration features that have been provided to the Fastly service.
 
 #### Language Detection
 
