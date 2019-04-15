@@ -1,7 +1,7 @@
 <div>
   <ul>
-    <li *ngIf="localeId != 'en-US'"><a href="/en-US" i18n="English button text in language selector@@appNavLanguageEnglish">English</a></li>
-    <li *ngIf="localeId != 'es-US'"><a href="/es-US" i18n="Spanish button text in language selector@@appNavLanguageSpanish">Español</a></li>
+    <li *ngIf="localeId != 'en-US'"><a href="/en-US{{currentUrl}}" i18n="English button text in language selector@@appNavLanguageEnglish">English</a></li>
+    <li *ngIf="localeId != 'es-US'"><a href="/es-US{{currentUrl}}" i18n="Spanish button text in language selector@@appNavLanguageSpanish">Español</a></li>
   </ul>
   <ul>
     <li><a routerLink="/home" routerLinkActive="active" i18n="Home button text in the app nav@@appNavItemHome">Home</a></li>
