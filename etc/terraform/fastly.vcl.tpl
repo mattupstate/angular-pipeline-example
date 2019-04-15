@@ -9,7 +9,7 @@ sub vcl_recv {
     if (req.http.host ~ "^([a-zA-Z0-9]{7})\.angular\-pipeline\-example\.mattupstate\.com$") {
       set req.http.X-Key-Prefix = "/" re.group.1;
     } else {
-      set req.http.X-Key-Prefix = "/_latest";
+      set req.http.X-Key-Prefix = "/${target_version}";
     }
 
     if (req.url ~ "\.(js|map|css|txt|html|ico|png|gif|jpg)$") {
@@ -30,9 +30,6 @@ sub vcl_recv {
 
 sub vcl_fetch {
   if (beresp.status == 301 || beresp.status == 302) {
-    if (beresp.http.Location ~ "^/_latest/") {
-      set beresp.http.Location = regsub(beresp.http.Location, "^/_latest/", "/");
-    }
     if (beresp.http.Location ~ "^/([a-zA-Z0-9]{7})/") {
       set beresp.http.Location = regsub(beresp.http.Location, "^/([a-zA-Z0-9]{7})/", "/");
     }

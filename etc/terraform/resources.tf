@@ -1,3 +1,7 @@
+variable "target_version" {
+  type = "string"
+}
+
 provider "aws" {}
 provider "dnsimple" {}
 provider "fastly" {}
@@ -10,6 +14,8 @@ terraform {
   }
 }
 
+data "fastly_ip_ranges" "fastly" {}
+
 resource "aws_s3_bucket" "website" {
   bucket = "angular-pipeline-example.mattupstate.com"
   acl    = "public-read"
@@ -19,6 +25,29 @@ resource "aws_s3_bucket" "website" {
     index_document = "index.html"
     error_document = "error.html"
   }
+}
+
+resource "aws_s3_bucket_policy" "fastly_access" {
+  bucket = "${aws_s3_bucket.website.id}"
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "${aws_s3_bucket.website.arn}/*",
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": ${jsonencode(data.fastly_ip_ranges.fastly.cidr_blocks)}
+        }
+      }
+    }
+  ]
+}
+POLICY
 }
 
 resource "aws_s3_bucket_object" "error_page" {
@@ -44,6 +73,13 @@ resource "dnsimple_record" "versioned_website" {
   ttl    = 3600
 }
 
+data "template_file" "fastly_vcl" {
+  template = "${file("${path.module}/fastly.vcl.tpl")}"
+  vars = {
+    target_version = "${var.target_version}"
+  }
+}
+
 resource "fastly_service_v1" "website" {
   name          = "angular-pipeline-example.mattupstate.com"
   default_host  = "${aws_s3_bucket.website.website_endpoint}"
@@ -67,7 +103,7 @@ resource "fastly_service_v1" "website" {
 
   vcl {
     name    = "my_custom_main_vcl"
-    content = "${file("${path.module}/fastly.vcl")}"
+    content = "${data.template_file.fastly_vcl.rendered}"
     main    = true
   }
 }
