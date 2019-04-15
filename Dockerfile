@@ -41,12 +41,6 @@ USER testuser
 
 
 FROM base AS test
-ARG git_branch
-ARG git_commit_sha
-ARG git_is_dirty
-ENV GIT_BRANCH=${git_branch} \
-    GIT_COMMIT_SHA=${git_commit_sha} \
-    GIT_IS_DIRTY=${git_is_dirty}
 WORKDIR /usr/src/app
 COPY --chown=testuser:testuser bin ./bin
 COPY --chown=testuser:testuser package.json package-lock.json ./
@@ -59,6 +53,12 @@ COPY --chown=testuser:testuser e2e ./e2e
 
 
 FROM test AS build
+ARG git_branch
+ARG git_commit_sha
+ARG git_is_dirty
+ENV GIT_BRANCH=${git_branch} \
+    GIT_COMMIT_SHA=${git_commit_sha} \
+    GIT_IS_DIRTY=${git_is_dirty}
 RUN npm run build-prod
 
 
