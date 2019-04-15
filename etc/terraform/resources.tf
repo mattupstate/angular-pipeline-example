@@ -18,7 +18,7 @@ data "fastly_ip_ranges" "fastly" {}
 
 resource "aws_s3_bucket" "website" {
   bucket = "angular-pipeline-example.mattupstate.com"
-  acl    = "public-read"
+  acl    = "private"
   region = "us-east-2"
 
   website {

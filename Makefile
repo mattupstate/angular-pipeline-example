@@ -105,7 +105,7 @@ dist-image-push:
 
 .PHONY: artifacts-deploy
 artifacts-deploy: deploy-image
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl public-read --recursive ./dist $(S3_KEY_PREFIX_URI)
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
 	@echo "Artifacts deployed successfully"
 	@echo "S3 URI: $(S3_KEY_PREFIX_URI)
 	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)
