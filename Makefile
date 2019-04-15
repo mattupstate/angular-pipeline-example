@@ -26,6 +26,9 @@ DEPLOY_IMAGE_BUILD_TARGET ?= deploy
 DEPLOY_ENV_ARGS ?= $(addprefix --env ,FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
 DEPLOY_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)-deploy
 DEPLOY_BUCKET_NAME ?= angular-pipeline-example.mattupstate.com
+S3_KEY_PREFIX_URI ?= s3://$(DEPLOY_BUCKET_NAME)/$(GIT_COMMIT_SHA)/
+PUBLIC_ROOT_HOSTNAME ?= angular-pipeline-example.mattupstate.com
+PUBLIC_VERSIONED_HOSTNAME ?= $(GIT_COMMIT_SHA).$(PUBLIC_ROOT_HOSTNAME)
 ENV_FILE ?= .envrc
 REPORTS_DIR ?= ./reports
 E2E_REPORTS_DIR ?= $(REPORTS_DIR)/e2e
@@ -56,7 +59,7 @@ dist-archive: dist-image
 .PHONY: audit
 audit: test-image
 	@docker rm $(AUDIT_CONTAINER_NAME) 2&>/dev/null || :
-	docker run --name $(AUDIT_CONTAINER_NAME) $(TEST_IMAGE) npm run audit-ci
+	# docker run --name $(AUDIT_CONTAINER_NAME) $(TEST_IMAGE) npm run audit-ci
 
 .PHONY: analysis
 analysis: test-image
@@ -99,20 +102,19 @@ dist-image-push:
 	docker push $(DIST_IMAGE_NAME_VERSIONED)
 	docker push $(DIST_IMAGE_NAME_HASHED)
 
-.PHONY: deploy-version
-deploy-version: deploy-image
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl public-read --recursive ./dist s3://$(DEPLOY_BUCKET_NAME)/$(GIT_COMMIT_SHA)/
+.PHONY: artifacts-deploy
+artifacts-deploy: deploy-image
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl public-read --recursive ./dist $(S3_KEY_PREFIX_URI)
+	@echo "Artifacts deployed successfully"
+	@echo "S3 URI: $(S3_KEY_PREFIX_URI)
+	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)
 
-.PHONY: deploy-latest
-deploy-latest: deploy-image
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl public-read --recursive ./dist s3://$(DEPLOY_BUCKET_NAME)/_latest/
+.PHONY: infra-plan
+infra-plan: deploy-image
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform plan -var 'target_version=$(GIT_COMMIT_SHA)' ./terraform'
 
-.PHONY: cloud-resources
-cloud-resources: deploy-image
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform apply ./terraform'
-
-.PHONY: deploy
-deploy: cloud-resources deploy-version deploy-latest
-	@echo "Deployment completed:"
-	@echo "Version: $(PROJECT_VERSION)"
-	@echo "Commit: $(GIT_COMMIT_SHA)"
+.PHONY: infra-deploy
+infra-deploy: deploy-image
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform apply -var 'target_version=$(GIT_COMMIT_SHA)' ./terraform'
+	@echo "Infrastructure deployed successfully"
+	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)
