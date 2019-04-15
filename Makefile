@@ -24,6 +24,7 @@ DIST_ARCHIVE_SRC_DIR ?= /usr/share/app/dist
 DEPLOY_CONTAINER_NAME ?= $(PROJECT_NAME)-deploy
 DEPLOY_IMAGE_BUILD_TARGET ?= deploy
 DEPLOY_ENV_ARGS ?= $(addprefix --env ,FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
+TERRAFORM_VAR_ARGS ?= $(addprefix -var ,'target_version=$(GIT_COMMIT_SHA)')
 DEPLOY_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)-deploy
 DEPLOY_BUCKET_NAME ?= angular-pipeline-example.mattupstate.com
 S3_KEY_PREFIX_URI ?= s3://$(DEPLOY_BUCKET_NAME)/$(GIT_COMMIT_SHA)/
@@ -111,10 +112,10 @@ artifacts-deploy: deploy-image
 
 .PHONY: infra-plan
 infra-plan: deploy-image
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform plan -var 'target_version=$(GIT_COMMIT_SHA)' ./terraform'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform plan $(TERRAFORM_VAR_ARGS) ./terraform'
 
 .PHONY: infra-deploy
 infra-deploy: deploy-image
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform apply -var 'target_version=$(GIT_COMMIT_SHA)' ./terraform'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform apply $(TERRAFORM_VAR_ARGS) ./terraform'
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)
