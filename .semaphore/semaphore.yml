@@ -14,11 +14,5 @@ blocks:
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make test
-          - make analysis
-          - make audit
-          - make e2e
-          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make dist-image-push; fi
-          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make cloud-resources; fi
-          - make deploy-version
-          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make deploy-latest; fi
+          - make test analysis audit e2e infra-plan
+          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make dist-image-push artifacts-deploy infra-deploy; fi

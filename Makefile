@@ -59,7 +59,7 @@ dist-archive: dist-image
 .PHONY: audit
 audit: test-image
 	@docker rm $(AUDIT_CONTAINER_NAME) 2&>/dev/null || :
-	# docker run --name $(AUDIT_CONTAINER_NAME) $(TEST_IMAGE) npm run audit-ci
+	docker run --name $(AUDIT_CONTAINER_NAME) $(TEST_IMAGE) npm run audit-ci
 
 .PHONY: analysis
 analysis: test-image
