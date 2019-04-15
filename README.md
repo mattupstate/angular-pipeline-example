@@ -1,19 +1,22 @@
-# Angular CI Pipeline Example
+# Angular CI+CD Pipeline Example
 
-This repository is the artifact of my experience as I taught myself how to setup an Angular project using the popular CLI tool and provide additional tooling to contributors that can run the build pipeline with minimal differences between the local development environment and a Continuous Integration context.
+This repository is the artifact of my experience as I taught myself how to setup an Angular project, provide additional tooling to contributors to run the CI pipeline with minimal differences between the local development environment and the CI server (Semaphore), and continuously deliver the application to the public using a combination of an artifact repository (S3) and a CDN service (Fastly).
 
 As part of this effort I hope to use a (subjectively) minimal amount of tools that are (subjectively) popular and (subjectively) easy to install such that it can (arguably) be replicated in most modern software development organizations.
 
-## Build Pipeline
+## CI+CD Pipeline
 
-The build pipeline can be expressed as a set of ordered steps:
+The CI+CD pipeline can be expressed as a set of ordered steps:
 
 1. Run unit tests
 2. Run static analysis
 3. Run dependency audit
 4. Run end-to-end tests
+5. Run infrastructure change plan
+6. Deploy artifacts
+7. Deploy infrastructure
 
-Implicit in this pipeline are additional steps that build the execution contexts and a distributable application artifact. In this case, the distributable artifact will be a lightweight Docker image based on Nginx that contains the Angular application build artifacts.
+These steps would execute on every change to the `master` branch. Where as any other branch the last step would be `#5`. Implicit in this pipeline are additional steps that build the execution contexts and distributable application artifacts.
 
 I've implemented this pipeline using a `Makefile`. I've chosen `make` as a tool for it's relative ubiquity, stability and simplicity. Each of the following `make` commands map to the logical pipeline steps described above:
 
@@ -21,18 +24,19 @@ I've implemented this pipeline using a `Makefile`. I've chosen `make` as a tool 
 2. `make analysis`
 3. `make audit`
 4. `make e2e`
-
-A full pipeline, where each step is dependent on a successful completion of the prior step, is executed by running `make build`. Optionally, each step may be executed on its own should one want to shorten the feedback loop.
+5. `make infra-plan`
+6. `make artifacts-deploy`
+7. `make infra-deploy`
 
 ## Execution Contexts
 
-Docker and Docker Compose are used to manage two primary execution contexts that support the pipeline. I've chosen these tools for their relative ubiquity and popularity. Additionally, these tools affords one to express an execution context in the form of configuration files that are stored in source control and can be (mostly) deterministically built under the assumption that internet infrastructure that delivers dependencies is reliably maintained and secure. The following is a description of each context.
+Docker and Docker Compose are used to manage three primary execution contexts that support the pipeline. I've chosen these tools for their relative ubiquity and popularity. Additionally, these tools affords one to express an execution context in the form of configuration files that are stored in source control and can be (mostly) deterministically built under the assumption that internet infrastructure that delivers dependencies is reliably maintained and secure. The following is a description of each context.
 
 ### Test Context
 
-The test execution context is defined in the first stage of the [multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) `Dockerfile`. It is automatically built prior to executing `make test` `make analysis` or `make audit`. Optionally, `make test-image` is available should one want to build the test context in isolation.
+The test execution context is defined in the second stage of the [multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) `Dockerfile`. It is automatically built prior to executing `make test` `make analysis` or `make audit`. Optionally, `make test-image` is available should one want to build the test context in isolation.
 
-This resulting image, named `angular-pipeline-example:test`, contains all the dependencies required to run unit tests, perform static analysis, audit dependency vulnerabilities, and build the final Angular application artifacts. Pipeline steps that rely on this context will be executed in containers created from this image.
+This resulting image contains all the dependencies required to run unit tests, perform static analysis, audit dependency vulnerabilities, and build the final Angular application artifacts. Pipeline steps that rely on this context will be executed in containers created from this image.
 
 ### End-to-End Context
 
@@ -45,6 +49,10 @@ The end-to-end execution context is defined in `docker-compose.yml`. One might c
 The Selenium Grid services are created from official SeleniumHQ Docker images. You can learn more about these images and how to use them [here](https://github.com/SeleniumHQ/docker-selenium).
 
 However, the images used for the Protractor and Angular application services are expressed as environment variables, `TEST_DOCKER_IMAGE` and `DIST_DOCKER_IMAGE` respectively. They are supplied to the call to `docker-compose` in the `Makefile` using an exported environment variable. This prevents the need to update the `docker-compose.yml` file when the project name or version number is changed. Futhermore, the Protractor service uses the test execution context image described above and the Angular application service uses the eventual, final, distributable Docker image.
+
+### Deploy Context
+
+The deploy execution context defined in the last stage of the multi-stage `Dockerfile`. It is automatically built prior to executing `make artifacts-deploy` or `make infra-deploy`. The image contains the AWS command line tool and Terraform which are used to perform both deployment routines.
 
 ## Build Steps
 
@@ -86,25 +94,13 @@ Docker Compose will run all the specified services and, because the `--exit-code
 
 The command specified to run in the `protractor` services is `wait-for-hub npm run e2e-ci`. This makes use of a custom script (`bin/wait-for-hub`) that waits for the Selenium Hub service to be aware of both Chrome and Firefox. Once ready, the script then calls `ng e2e -c ci` which runs Protractor using the `e2e:ci` configuration expressed in the `angular.json`.
 
-## Putting it All Together
+### `make artifacts-deploy`
 
-To execute the full pipeline, as it would in a CI context, one would run:
+The `make artifacts-deploy` step copies the build artifacts to an S3 bucket via the AWS command line tool. Additionally, the artifacts are stored in the bucket using a versioned key prefix such that multiple versions of the application may be accessed using a conventional hostname.
 
-    $ make build
+### `make infra-deploy`
 
-Assuming all steps completed successfully, the name of the Docker image that was built during the pipeline should be visible in the last bit of console output:
-
-```
-...
-Build completed:
-DOCKER_IMAGE=angular-pipeline-example:0.1.0
-```
-
-Optionally, one can run:
-
-    $ make publish-image
-
-Which will execute the full pipeline and publish the image to the public Docker image registry. The image available as `mattupstate/angular-pipeline-example:0.1.0`
+The `make infra-deploy` step applies any desired changes to the cloud infrastructure that delivers the application on the public internet. Cloud infrastructure is managed using Terraform.
 
 ## Public CI Integration
 
@@ -125,6 +121,125 @@ Finally, here are some notes that describe some of the underlying details.
 ### Docker Usage
 
 I've purposely not used the `--rm` flag for `docker run` commands. Leaving containers around after executing commands can be helpful when debugging. It also affords me the ability to copy resources out of a stopped container to the host.
+
+### DNSimple Usage
+
+DNSimple is my personal DNS management service. In the `./etc/terraform/resources.tf` file you will see two DNS records for this example application:
+
+- angular-pipeline-example.mattupstate.com
+- \*.angular-pipeline-example.mattupstate.com
+
+The first is the default, end-user facing record. The second is a wildcard record that, with some unique Varnish configuration for Fastly (described below), affords me the ability to access successful builds of the `master` branch. I thought this might be useful for testing purposes at some point.
+
+Additionally, I've created an API token under my account specific to this project. I've configured Semaphore with this token in order to be able to apply DNS changes during the CI+CD pipeline.
+
+### AWS Usage
+
+AWS S3 is used as a static build artifact repository. I've configured the S3 bucket using the [static hosting feature](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html). I've also added a bucket policy that restricts access from Fastly's known IP addresses.
+
+Additionally, under my personal AWS account I've created an IAM user to manage API access in the context of Semaphore CI. The access key ID and secret have been provided to Semaphore so that I can automate changes in the CI+CD context.
+
+Finally, for reference, here is the Terraform configuration I've used at the time of this writing to manage the user:
+
+```
+provider "aws" {}
+
+terraform {
+  backend "s3" {
+    region = "us-east-2"
+    bucket = "tfstate.mattupstate.com"
+    key    = "_global/angular-pipeline-example.mattupstate.com"
+  }
+}
+
+resource "random_pet" "iam_username" {
+  keepers = {
+    fqdn = "angular-pipeline-example.mattupstate.com"
+  }
+}
+
+resource "aws_iam_user" "ci" {
+  name = "${random_pet.iam_username.id}"
+  path = "/"
+  tags = {
+      context-description = "Continuous integration services"
+      context-url         = "https://mattupstate.semaphoreci.com/projects/angular-pipeline-example"
+  }
+}
+
+resource "aws_iam_access_key" "ci_user" {
+  user    = "${aws_iam_user.ci.name}"
+  pgp_key = "keybase:mattupstate"
+}
+
+resource "aws_iam_user_policy" "ci" {
+  user   = "${aws_iam_user.ci.name}"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Action": [
+            "s3:ListBucket"
+        ],
+        "Effect": "Allow",
+        "Resource": "arn:aws:s3:::tfstate.mattupstate.com"
+    },
+    {
+        "Action": [
+            "s3:GetObject",
+            "s3:PutObject"
+        ],
+        "Effect": "Allow",
+        "Resource": "arn:aws:s3:::tfstate.mattupstate.com/${random_pet.iam_username.keepers.fqdn}/*"
+    },
+    {
+      "Action": [
+        "s3:*"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+          "arn:aws:s3:::${random_pet.iam_username.keepers.fqdn}",
+          "arn:aws:s3:::${random_pet.iam_username.keepers.fqdn}/*"
+      ]
+    }
+  ]
+}
+EOF
+}
+
+output "ci_iam_username" {
+    value = "${random_pet.iam_username.id}"
+}
+
+output "ci_iam_user_access_key_id" {
+    value = "${aws_iam_access_key.ci_user.id}"
+}
+
+output "ci_iam_user_access_key_encrypted_secret" {
+    value = "${aws_iam_access_key.ci_user.encrypted_secret}"
+}
+```
+
+### Fastly Usage
+
+Fastly is a CDN, or "edge", service that can be used as a rudimentary reverse proxy. In this case, I have provided Fastyl with a custom Varnish configuration that does a few unique things.
+
+#### Language Detection
+
+Angular comes out of the box with compile time i18n support. In other words, one must compile a version of the application for each language to be supported. In this example application, each language is deployed in a subfolder using the name of the locale identifier (`${HOSTNAME}/en-US/` or `${HOSTNAME}/es-US/`). The Varnish configuration is then designed to redirect any users that access the site at the root URL to the language for which their browser is primarily configured for using Fastly's [`accept.language_lookup` function](https://docs.fastly.com/guides/vcl-tutorials/accept-language-header-vcl-features). The application then offers a language selection menu should the user want to manually switch to another supported language.
+
+#### AWS S3 Redirects
+
+AWS S3 returns HTTP redirects to force a traling slash on object keys that look like directories in order to load the `index.html` file appropriately. You'll notice some logic in the Varnish configuration that strips the object key prefix so that the redirect bubbles up to the end user's browser appropriately.
+
+#### HTML5 Push State
+
+Angular uses HTML5 push state for routing. Therefore, any time a user accesses the site for the first time using a URL that is not at the root of the application, the HTTP server must load the `index.html` page in order for Angular's router to present the component that maps to the URL. As such, you may also notice that the Varnish configuration will load the `index.html` page for any request that isn't well known file type.
+
+#### Versioned Access
+
+The Varnish configuration is also aware of the wildcard DNS entry (mentioned above) in order to be able to access `master` branch builds. The configuraiton dynamically changes the S3 object key prefix based on the DNS prefix.
 
 ### Makefile Extras
 
@@ -154,10 +269,11 @@ I initially generated the Angular project using the Angular CLI. However, I adde
 
 #### `angular.json`
 
-- Changed the `outputPath` value to simply be `dist` instead of `dist/angular-pipeline-example` to avoid having to deal with a named directory in build tooling.
+- Changed the `outputPath` value to simply be `dist` instead of `dist/angular-pipeline-example` for the default `build` configuration to avoid having to deal with a named directory in build tooling.
 - Added `"codeCoverage": true` to the default `test` options.
 - Removed the `production` configurations for all but for `build` as I found them to be unnecessary.
-- Set `"sourceMap": true` in the `build:production` configuration because I believe shipping source maps to production is a good thing.
+- Added language specific production build configurations.
+- Set `"sourceMap": true` in the `build:production-${lang}` configuration because I believe shipping source maps to production is a good thing.
 
 #### `src/karma.conf.js`
 
