@@ -11,7 +11,7 @@
     "build-prod-es": "ng build -c production-es",
     "lint": "ng lint",
     "test": "ng test",
-    "test-ci": "npm run build-stamp && ng test -c ci",
+    "test-ci": "ng test -c ci",
     "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities.moderate + .metadata.vulnerabilities.high + .metadata.vulnerabilities.critical') = \"0\" ] || npm audit",
     "e2e": "ng e2e",
     "e2e-ci": "ng e2e -c ci",
