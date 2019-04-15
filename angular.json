@@ -38,6 +38,10 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
+                },
+                {
+                  "replace": "src/environments/build-info.ts",
+                  "with": "src/environments/build-info.prod.ts"
                 }
               ],
               "optimization": true,
@@ -64,6 +68,10 @@
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
+                },
+                {
+                  "replace": "src/environments/build-info.ts",
+                  "with": "src/environments/build-info.prod.ts"
                 }
               ],
               "optimization": true,

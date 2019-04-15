@@ -5,4 +5,4 @@ dist.tar
 dist/
 node_modules/
 reports/
-src/environments/build-info.ts
+src/environments/build-info.prod.ts
