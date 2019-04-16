@@ -15,7 +15,6 @@
     "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities.moderate + .metadata.vulnerabilities.high + .metadata.vulnerabilities.critical') = \"0\" ] || npm audit",
     "e2e": "ng e2e",
     "e2e-ci": "ng e2e -c ci",
-    "update-webdriver-ci": "webdriver-manager update --standalone false --gecko false --versions.chrome 2.46",
     "build-stamp": "./bin/build-stamp src/environments/build-info.prod.ts"
   },
   "private": true,

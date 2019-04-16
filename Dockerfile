@@ -42,14 +42,9 @@ USER testuser
 
 FROM base AS test
 WORKDIR /usr/src/app
-COPY --chown=testuser:testuser bin ./bin
 COPY --chown=testuser:testuser package.json package-lock.json ./
 RUN npm ci
-RUN npm run update-webdriver-ci
-COPY --chown=testuser:testuser angular.json tsconfig.json tslint.json ./
-COPY --chown=testuser:testuser etc ./etc
-COPY --chown=testuser:testuser src ./src
-COPY --chown=testuser:testuser e2e ./e2e
+COPY --chown=testuser:testuser . ./
 
 
 FROM test AS build
