@@ -45,6 +45,11 @@ blocks:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
           - make e2e
+      - name: Infra Plan
+        commands:
+          - checkout
+          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+          - make infra-plan
 
 promotions:
   - name: Deploy
