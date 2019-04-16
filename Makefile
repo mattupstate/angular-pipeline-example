@@ -39,17 +39,14 @@ E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
 
 .PHONY: test-image
 test-image:
-	docker pull $(TEST_IMAGE) || :
-	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
+	docker pull $(TEST_IMAGE) || docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
 
 .PHONY: dist-image
-dist-image:
-	docker pull $(TEST_IMAGE) || :
-	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
+dist-image: test-image
+	docker pull $(DIST_IMAGE) || docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: deploy-image
-deploy-image:
-	docker pull $(TEST_IMAGE) || :
+deploy-image: test-image
 	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DEPLOY_IMAGE_BUILD_TARGET) --tag $(DEPLOY_IMAGE) .
 
 .PHONY: test-image-push
@@ -97,13 +94,8 @@ e2e: test-image dist-image
 	docker cp $$(SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose ps -q protractor):$(E2E_REPORTS_SRC_DIR) $(E2E_REPORTS_DIR)
 
 .PHONY: e2e-debug
-e2e-debug: dist-image
+e2e-debug: test-image dist-image
 	SELENIUM_CHROME_IMAGE=node-chrome-debug SELENIUM_FIREFOX_IMAGE=node-firefox-debug TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up chrome firefox webapp
-
-.PHONY: build
-build: test analysis audit e2e
-	@echo "Build completed:"
-	@echo "DOCKER_IMAGE=$(DIST_IMAGE)"
 
 .PHONY: artifacts-deploy
 artifacts-deploy: deploy-image
