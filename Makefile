@@ -1,13 +1,13 @@
 SHELL := /bin/bash
 CI ?= false
 PROJECT_NAME ?= $(shell jq -r '.name' package.json)
-PROJECT_VERSION ?= $(shell jq -r '.version' package.json)
 GIT_COMMIT_SHA ?= $(shell git rev-parse --verify --short HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
 DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
 IMAGE_BASE_NAME ?= mattupstate/$(PROJECT_NAME)
-TEST_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)-test
+TEST_CHECKSUM ?= $(shell ./bin/md5 package-lock.json Dockerfile)
+TEST_IMAGE ?= $(IMAGE_BASE_NAME):test-$(TEST_CHECKSUM)
 TEST_IMAGE_BUILD_TARGET ?= test
 TEST_CONTAINER_NAME ?= $(PROJECT_NAME)-test
 TEST_CONTAINER_SECCOMP_FILE ?= etc/docker/seccomp/chrome.json
@@ -15,8 +15,6 @@ TEST_CONTAINER_SRC_DIR ?= /usr/src/app
 ANALYSIS_CONTAINER_NAME ?= $(PROJECT_NAME)-analysis
 AUDIT_CONTAINER_NAME ?= $(PROJECT_NAME)-audit
 DIST_IMAGE_BUILD_TARGET ?= dist
-DIST_IMAGE_NAME_VERSIONED ?= $(IMAGE_BASE_NAME):$(PROJECT_VERSION)
-DIST_IMAGE_NAME_HASHED ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)
 DIST_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)
 DIST_ARCHIVE_FILENAME ?= dist.tar
 DIST_ARCHIVE_CONTAINER_NAME ?= $(PROJECT_NAME)-dist
@@ -41,15 +39,26 @@ E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
 
 .PHONY: test-image
 test-image:
-	docker build --pull --quiet $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
+	docker pull $(TEST_IMAGE) || :
+	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
 
 .PHONY: dist-image
 dist-image:
-	docker build --pull --quiet $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
+	docker pull $(TEST_IMAGE) || :
+	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: deploy-image
 deploy-image:
-	docker build --pull --quiet $(DOCKER_BUILD_ARGS) --target $(DEPLOY_IMAGE_BUILD_TARGET) --tag $(DEPLOY_IMAGE) .
+	docker pull $(TEST_IMAGE) || :
+	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DEPLOY_IMAGE_BUILD_TARGET) --tag $(DEPLOY_IMAGE) .
+
+.PHONY: test-image-push
+test-image-push:
+	docker push $(TEST_IMAGE)
+
+.PHONY: dist-image-push
+dist-image-push:
+	docker push $(DIST_IMAGE)
 
 .PHONY: dist-archive
 dist-archive: dist-image
@@ -95,13 +104,6 @@ e2e-debug: dist-image
 build: test analysis audit e2e
 	@echo "Build completed:"
 	@echo "DOCKER_IMAGE=$(DIST_IMAGE)"
-
-.PHONY: dist-image-push
-dist-image-push:
-	docker tag $(DIST_IMAGE) $(DIST_IMAGE_NAME_VERSIONED)
-	docker tag $(DIST_IMAGE) $(DIST_IMAGE_NAME_HASHED)
-	docker push $(DIST_IMAGE_NAME_VERSIONED)
-	docker push $(DIST_IMAGE_NAME_HASHED)
 
 .PHONY: artifacts-deploy
 artifacts-deploy: deploy-image

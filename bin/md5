@@ -1,0 +1,14 @@
+#!/bin/bash
+
+case $(uname) in
+  Darwin)
+    cat $@ | md5 -q
+    ;;
+  Linux)
+    cat $@ | md5sum | awk '{ print $1 }'
+   ;;
+  *)
+    echo "Unsupported distro $DIST"
+    exit 1
+  ;;
+esac

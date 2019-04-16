@@ -1,4 +1,4 @@
-FROM node:10.15.1-stretch AS base
+FROM node:10.15.1-stretch AS test
 RUN apt-get update \
     && apt-get install -y \
       apt-transport-https \
@@ -38,9 +38,6 @@ RUN groupadd -r testuser \
     && chown -R testuser:testuser /usr/src/app \
     && chown -R testuser:testuser /usr/share/app
 USER testuser
-
-
-FROM base AS test
 WORKDIR /usr/src/app
 COPY --chown=testuser:testuser package.json package-lock.json ./
 RUN npm ci

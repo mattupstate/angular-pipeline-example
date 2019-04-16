@@ -5,14 +5,51 @@ agent:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
-  - name: "Build"
+  - name: Build Images
     task:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
-      - name: Run build
+      - name: Test Image
+        commands:
+        - checkout
+        - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+        - make test-image test-image-push
+      - name: Dist Image
+        commands:
+        - checkout
+        - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+        - make dist-image dist-image-push
+  - name: Tests
+    task:
+      secrets:
+        - name: angular-pipeline-example-secrets
+      jobs:
+      - name: Test
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make test analysis audit e2e infra-plan
-          - if [ "$SEMAPHORE_GIT_BRANCH" = "master" ]; then make dist-image-push artifacts-deploy infra-deploy; fi
+          - make test
+      - name: Analysis
+        commands:
+          - checkout
+          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+          - make analysis
+      - name: Audit
+        commands:
+          - checkout
+          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+          - make audit
+      - name: End-to-End
+        commands:
+          - checkout
+          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+          - make e2e
+
+promotions:
+  - name: Deploy
+    pipeline_file: deploy.yml
+    auto_promote_on:
+      - result: passed
+        branch:
+          - "^master$"
