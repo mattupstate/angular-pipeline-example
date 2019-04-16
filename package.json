@@ -12,7 +12,7 @@
     "lint": "ng lint",
     "test": "ng test",
     "test-ci": "ng test -c ci",
-    "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities.moderate + .metadata.vulnerabilities.high + .metadata.vulnerabilities.critical') = \"0\" ] || npm audit",
+    "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities | .moderate + .high + .critical > 3') = \"false\" ] || npm audit",
     "e2e": "ng e2e",
     "e2e-ci": "ng e2e -c ci",
     "build-stamp": "./bin/build-stamp src/environments/build-info.prod.ts"
