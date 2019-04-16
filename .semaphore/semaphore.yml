@@ -5,21 +5,18 @@ agent:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
-  - name: Build Images
+  - name: Build
     task:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
-      - name: Test Image
+      - name: Docker Images
         commands:
         - checkout
         - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
         - make test-image test-image-push
-      - name: Dist Image
-        commands:
-        - checkout
-        - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
         - make dist-image dist-image-push
+
   - name: Tests
     task:
       secrets:

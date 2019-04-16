@@ -14,5 +14,7 @@ blocks:
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make artifacts-deploy infra-deploy
+          - make deploy-image
+          - make artifacts-deploy
+          - make infra-deploy
 

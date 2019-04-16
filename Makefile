@@ -39,11 +39,11 @@ E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
 
 .PHONY: test-image
 test-image:
-	docker pull $(TEST_IMAGE) || docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
+	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
 
 .PHONY: dist-image
 dist-image: test-image
-	docker pull $(DIST_IMAGE) || docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
+	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: deploy-image
 deploy-image: test-image
@@ -58,25 +58,25 @@ dist-image-push:
 	docker push $(DIST_IMAGE)
 
 .PHONY: dist-archive
-dist-archive: dist-image
+dist-archive:
 	@docker rm $(DIST_ARCHIVE_CONTAINER_NAME) 2&>/dev/null || :
 	docker create --name $(DIST_ARCHIVE_CONTAINER_NAME) $(DIST_IMAGE)
 	docker cp $(DIST_ARCHIVE_CONTAINER_NAME):$(DIST_ARCHIVE_SRC_DIR) - > $(DIST_ARCHIVE_FILENAME)
 
 .PHONY: audit
-audit: test-image
+audit:
 	@docker rm $(AUDIT_CONTAINER_NAME) 2&>/dev/null || :
 	docker run --name $(AUDIT_CONTAINER_NAME) $(TEST_IMAGE) npm run audit-ci
 
 .PHONY: analysis
-analysis: test-image
+analysis:
 	@docker rm $(ANALYSIS_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(ANALYSIS_DIR)
 	mkdir -p $(dir $(ANALYSIS_DIR))
 	docker run --name $(ANALYSIS_CONTAINER_NAME) $(TEST_IMAGE) npm run lint
 
 .PHONY: test
-test: test-image
+test:
 	@docker rm $(TEST_CONTAINER_NAME) 2&>/dev/null || :
 	rm -rf $(COVERAGE_DIR)
 	mkdir -p $(dir $(COVERAGE_DIR))
@@ -86,7 +86,7 @@ test: test-image
 	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter format-coverage -o - -t lcov -p $(TEST_CONTAINER_SRC_DIR) $(COVERAGE_DIR)/lcov.info | ./bin/cc-test-reporter upload-coverage -i - || :
 
 .PHONY: e2e
-e2e: test-image dist-image
+e2e:
 	rm -rf $(E2E_REPORTS_DIR)
 	mkdir -p $(dir $(E2E_REPORTS_DIR))
 	SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose down || :
@@ -94,22 +94,22 @@ e2e: test-image dist-image
 	docker cp $$(SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose ps -q protractor):$(E2E_REPORTS_SRC_DIR) $(E2E_REPORTS_DIR)
 
 .PHONY: e2e-debug
-e2e-debug: test-image dist-image
+e2e-debug:
 	SELENIUM_CHROME_IMAGE=node-chrome-debug SELENIUM_FIREFOX_IMAGE=node-firefox-debug TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up chrome firefox webapp
 
 .PHONY: artifacts-deploy
-artifacts-deploy: deploy-image
+artifacts-deploy:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
 	@echo "Artifacts deployed successfully"
 	@echo "S3 URI: $(S3_KEY_PREFIX_URI)
 	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)
 
 .PHONY: infra-plan
-infra-plan: deploy-image
+infra-plan:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform plan $(TERRAFORM_VAR_ARGS) ./terraform'
 
 .PHONY: infra-deploy
-infra-deploy: deploy-image
+infra-deploy:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform apply $(TERRAFORM_VAR_ARGS) ./terraform'
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)
