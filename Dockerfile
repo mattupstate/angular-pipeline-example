@@ -1,4 +1,4 @@
-FROM node:10.15.1-stretch AS build
+FROM node:10.15.1-stretch AS test
 ARG git_branch
 ARG git_commit_sha
 ARG git_is_dirty
@@ -53,10 +53,10 @@ RUN npm run build-prod
 
 FROM nginx:1.14.2-alpine AS dist
 COPY --chown=nginx:nginx etc/nginx/conf.d /etc/nginx/conf.d
-COPY --chown=nginx:nginx --from=build /usr/src/app/dist /usr/share/app/dist
+COPY --chown=nginx:nginx --from=test /usr/src/app/dist /usr/share/app/dist
 
 
-FROM build as deploy
+FROM test as deploy
 WORKDIR /usr/share/app
-COPY --chown=testuser:testuser --from=build /usr/src/app/dist /usr/share/app/dist
-COPY --chown=testuser:testuser --from=build /usr/src/app/etc/terraform /usr/share/app/terraform
+COPY --chown=testuser:testuser --from=test /usr/src/app/dist /usr/share/app/dist
+COPY --chown=testuser:testuser --from=test /usr/src/app/etc/terraform /usr/share/app/terraform
