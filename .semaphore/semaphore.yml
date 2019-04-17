@@ -42,7 +42,7 @@ blocks:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
           - make e2e
-      - name: Infra Plan
+      - name: Infrastructure
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
