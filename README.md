@@ -14,7 +14,8 @@ The CI+CD pipeline can be expressed as a set of ordered steps:
 4. Run end-to-end tests
 5. Run infrastructure change plan
 6. Deploy artifacts
-7. Deploy infrastructure
+7. Run smoke tests
+8. Deploy infrastructure
 
 These steps would execute on every change to the `master` branch. Where as any other branch the last step would be `#5`. Implicit in this pipeline are additional steps that build the execution contexts and distributable application artifacts.
 
@@ -26,11 +27,12 @@ I've implemented this pipeline using a `Makefile`. I've chosen `make` as a tool 
 4. `make e2e`
 5. `make infra-plan`
 6. `make artifacts-deploy`
-7. `make infra-deploy`
+7. `make smoke-test`
+8. `make infra-deploy`
 
 ## Execution Contexts
 
-Docker and Docker Compose are used to manage three primary execution contexts that support the pipeline. I've chosen these tools for their relative ubiquity and popularity. Additionally, these tools affords one to express an execution context in the form of configuration files that are stored in source control and can be (mostly) deterministically built under the assumption that internet infrastructure that delivers dependencies is reliably maintained and secure. The following is a description of each context.
+Docker and Docker Compose are used to manage two primary execution contexts that support the pipeline. I've chosen these tools for their relative ubiquity and popularity. Additionally, these tools affords one to express an execution context in the form of configuration files that are stored in source control and can be (mostly) deterministically built under the assumption that internet infrastructure that delivers dependencies is reliably maintained and secure. The following is a description of each context.
 
 ### Test Context
 
@@ -49,10 +51,6 @@ The end-to-end execution context is defined in `docker-compose.yml`. One might c
 The Selenium Grid services are created from official SeleniumHQ Docker images. You can learn more about these images and how to use them [here](https://github.com/SeleniumHQ/docker-selenium).
 
 However, the images used for the Protractor and Angular application services are expressed as environment variables, `TEST_DOCKER_IMAGE` and `DIST_DOCKER_IMAGE` respectively. They are supplied to the call to `docker-compose` in the `Makefile` using an exported environment variable. This prevents the need to update the `docker-compose.yml` file when the project name or version number is changed. Futhermore, the Protractor service uses the test execution context image described above and the Angular application service uses the eventual, final, distributable Docker image.
-
-### Deploy Context
-
-The deploy execution context defined in the last stage of the multi-stage `Dockerfile`. It is automatically built prior to executing `make artifacts-deploy` or `make infra-deploy`. The image contains the AWS command line tool and Terraform which are used to perform both deployment routines.
 
 ## Build Steps
 
@@ -98,6 +96,10 @@ The command specified to run in the `protractor` services is `wait-for-hub npm r
 
 The `make artifacts-deploy` step copies the build artifacts to an S3 bucket via the AWS command line tool. Additionally, the artifacts are stored in the bucket using a versioned key prefix such that multiple versions of the application may be accessed using a conventional hostname.
 
+### `make smoke-test`
+
+The `make smoke-tests` step runs a specicialized end-to-end test configuration designed to perform lightweight, non-volatile tests against a newly published version of the application.
+
 ### `make infra-deploy`
 
 The `make infra-deploy` step applies any desired changes to the cloud infrastructure that delivers the application on the public internet. Cloud infrastructure is managed using Terraform.
@@ -108,7 +110,7 @@ Once I completed the `make` + `docker` based pipeline I integrated the build pip
 
 ### Semaphore CI
 
-[Semaphore CI](semaphoreci.com) is a public CI service. It took only a few tweaks to the pipeline to use the same tooling I use locally. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine, which is precisely what I was looking. Couldn't really ask for more! The Semaphore configuration is located at `.semaphore/semaphore.yml`.
+[Semaphore CI](semaphoreci.com) is a public CI service. It took only a few tweaks to the pipeline to use the same tooling I use locally. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine, which is precisely what I was looking. Couldn't really ask for more! The Semaphore configuration is located in the `.semaphore/` directory.
 
 ### Code Climate
 
@@ -279,13 +281,9 @@ I initially generated the Angular project using the Angular CLI. However, I adde
 
 - Changed the code coverage report to be saved to `../reports/coverage'
 
-#### `e2e/protractor.ci.conf.js`
+#### `e2e/protractor.*`
 
-This is a new file that contains Protractor configuration for the CI context. Reference to this file is made in `angular.json` under the `e2e:ci` configuration. Note the following configuration keys and their values:
-
-- `seleniumAddress`: The URL to reach the Selenium Hub service within the Docker network managed by Docker Compose.
-- `multiCapabilities`: Tells Protractor to test against both Chrome and Firefox as afforded through the Selenium Grid.
-- `baseUrl`: The URL to reach the Angular application service within the Docker network managed by Docker Compose.
+I've setup a unique configuration file for each logical `e2e` configuration in `angular.json`. The default configuration, `protractor.conf.js`, is designed to be used locally by developers. Where as `protractor.ci.conf.js` and `protractor.smoke.conf.js` are designed to be used in the CI context.
 
 ### Google Chrome HSTS Snafu
 
