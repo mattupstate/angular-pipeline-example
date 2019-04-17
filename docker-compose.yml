@@ -31,9 +31,9 @@ services:
 
   protractor:
     image: ${TEST_IMAGE}
-    command: wait-for-hub npm run ${NPM_SCRIPT:e2e-ci}
+    command: ./bin/wait-for-hub npm run ${NPM_SCRIPT:-e2e-ci}
     environment:
-      - GIT_COMMIT_SHA=${GIT_COMMIT_SHA:null}
+      - GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-null}
     depends_on:
       - hub
       - webapp
