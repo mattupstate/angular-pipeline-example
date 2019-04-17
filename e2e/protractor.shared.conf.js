@@ -9,7 +9,13 @@ const reporters = [
   new SpecReporter({spec: { displayStacktrace: true }})
 ];
 
-exports.config = {
+const params = {
+  buildInfo: {
+    gitCommit: process.env.GIT_COMMIT_SHA || 'null'
+  }
+};
+
+const config = {
   allScriptsTimeout: 11000,
   specs: [
     './src/**/*.e2e-spec.ts'
@@ -27,3 +33,6 @@ exports.config = {
     reporters.forEach(reporter => jasmine.getEnv().addReporter(reporter));
   }
 };
+
+exports.params = params;
+exports.config = config;
