@@ -22,7 +22,7 @@ blocks:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
-      - name: Test
+      - name: Unit
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
@@ -46,7 +46,7 @@ blocks:
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make infra-plan
+          - make deploy-image infra-plan
 
 promotions:
   - name: Deploy

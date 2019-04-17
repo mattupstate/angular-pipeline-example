@@ -1,4 +1,10 @@
-FROM node:10.15.1-stretch AS test
+FROM node:10.15.1-stretch AS build
+ARG git_branch
+ARG git_commit_sha
+ARG git_is_dirty
+ENV GIT_BRANCH=${git_branch} \
+    GIT_COMMIT_SHA=${git_commit_sha} \
+    GIT_IS_DIRTY=${git_is_dirty}
 RUN apt-get update \
     && apt-get install -y \
       apt-transport-https \
@@ -42,15 +48,6 @@ WORKDIR /usr/src/app
 COPY --chown=testuser:testuser package.json package-lock.json ./
 RUN npm ci
 COPY --chown=testuser:testuser . ./
-
-
-FROM test AS build
-ARG git_branch
-ARG git_commit_sha
-ARG git_is_dirty
-ENV GIT_BRANCH=${git_branch} \
-    GIT_COMMIT_SHA=${git_commit_sha} \
-    GIT_IS_DIRTY=${git_is_dirty}
 RUN npm run build-prod
 
 
@@ -62,4 +59,4 @@ COPY --chown=nginx:nginx --from=build /usr/src/app/dist /usr/share/app/dist
 FROM build as deploy
 WORKDIR /usr/share/app
 COPY --chown=testuser:testuser --from=build /usr/src/app/dist /usr/share/app/dist
-COPY --chown=testuser:testuser --from=test /usr/src/app/etc/terraform /usr/share/app/terraform
+COPY --chown=testuser:testuser --from=build /usr/src/app/etc/terraform /usr/share/app/terraform

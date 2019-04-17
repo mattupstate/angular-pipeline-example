@@ -36,9 +36,11 @@ ANALYSIS_DIR ?= $(REPORTS_DIR)/lint
 LCOV_FILE ?= $(COVERAGE_DIR)/lcov.info
 COVERAGE_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/coverage
 E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
+TERRAFORM_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/etc/terraform
 
 .PHONY: test-image
 test-image:
+	docker pull $(TEST_IMAGE) || :
 	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
 
 .PHONY: dist-image
@@ -106,10 +108,10 @@ artifacts-deploy:
 
 .PHONY: infra-plan
 infra-plan:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform plan $(TERRAFORM_VAR_ARGS) ./terraform'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform plan $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
 
 .PHONY: infra-deploy
 infra-deploy:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init ./terraform && terraform apply $(TERRAFORM_VAR_ARGS) ./terraform'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)
