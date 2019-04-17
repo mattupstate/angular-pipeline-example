@@ -81,6 +81,11 @@ test:
 	docker cp $(TEST_CONTAINER_NAME):$(COVERAGE_SRC_DIR) $(COVERAGE_DIR)
 	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter format-coverage -o - -t lcov -p $(TEST_CONTAINER_SRC_DIR) $(COVERAGE_DIR)/lcov.info | ./bin/cc-test-reporter upload-coverage -i - || :
 
+.PHONY: smoke-test
+smoke-test:
+	NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose down || :
+	NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
+
 .PHONY: e2e
 e2e:
 	rm -rf $(E2E_REPORTS_DIR)
