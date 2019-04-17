@@ -11,7 +11,7 @@ config.multiCapabilities = [{
   browserName: 'chrome'
 }];
 config.specs = [
-  './src/smoke.e2e-spec.ts'
+  './src/**/*.smoke-spec.ts'
 ]
 
 exports.config = config;
