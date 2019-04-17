@@ -20,10 +20,8 @@ DIST_ARCHIVE_FILENAME ?= dist.tar
 DIST_ARCHIVE_CONTAINER_NAME ?= $(PROJECT_NAME)-dist
 DIST_ARCHIVE_SRC_DIR ?= /usr/share/app/dist
 DEPLOY_CONTAINER_NAME ?= $(PROJECT_NAME)-deploy
-DEPLOY_IMAGE_BUILD_TARGET ?= deploy
 DEPLOY_ENV_ARGS ?= $(addprefix --env ,FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
 TERRAFORM_VAR_ARGS ?= $(addprefix -var ,'target_version=$(GIT_COMMIT_SHA)')
-DEPLOY_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)-deploy
 DEPLOY_BUCKET_NAME ?= angular-pipeline-example.mattupstate.com
 S3_KEY_PREFIX_URI ?= s3://$(DEPLOY_BUCKET_NAME)/$(GIT_COMMIT_SHA)/
 PUBLIC_ROOT_HOSTNAME ?= angular-pipeline-example.mattupstate.com
@@ -46,10 +44,6 @@ test-image:
 .PHONY: dist-image
 dist-image: test-image
 	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
-
-.PHONY: deploy-image
-deploy-image: test-image
-	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DEPLOY_IMAGE_BUILD_TARGET) --tag $(DEPLOY_IMAGE) .
 
 .PHONY: test-image-push
 test-image-push:
@@ -101,17 +95,17 @@ e2e-debug:
 
 .PHONY: artifacts-deploy
 artifacts-deploy:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
 	@echo "Artifacts deployed successfully"
 	@echo "S3 URI: $(S3_KEY_PREFIX_URI)"
 	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)"
 
 .PHONY: infra-plan
 infra-plan:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform plan $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform plan $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
 
 .PHONY: infra-deploy
 infra-deploy:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)"
