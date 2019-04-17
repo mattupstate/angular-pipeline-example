@@ -1,6 +1,6 @@
 import { AboutPage } from './about.po';
 
-describe('Home Page', () => {
+describe('About Page', () => {
   let page: AboutPage;
 
   beforeEach(() => {
