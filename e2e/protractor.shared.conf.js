@@ -9,13 +9,12 @@ const reporters = [
   new SpecReporter({spec: { displayStacktrace: true }})
 ];
 
-const params = {
-  buildInfo: {
-    gitCommit: process.env.GIT_COMMIT_SHA || 'null'
-  }
-};
-
 const config = {
+  params: {
+    buildInfo: {
+      gitCommit: process.env.GIT_COMMIT_SHA || 'null'
+    }
+  },
   allScriptsTimeout: 11000,
   specs: [
     './src/**/*.e2e-spec.ts'
@@ -34,5 +33,4 @@ const config = {
   }
 };
 
-exports.params = params;
 exports.config = config;
