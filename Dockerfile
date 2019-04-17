@@ -1,10 +1,4 @@
 FROM node:10.15.1-stretch AS test
-ARG git_branch
-ARG git_commit_sha
-ARG git_is_dirty
-ENV GIT_BRANCH=${git_branch} \
-    GIT_COMMIT_SHA=${git_commit_sha} \
-    GIT_IS_DIRTY=${git_is_dirty}
 RUN apt-get update \
     && apt-get install -y \
       apt-transport-https \
@@ -48,6 +42,12 @@ WORKDIR /usr/src/app
 COPY --chown=testuser:testuser package.json package-lock.json ./
 RUN npm ci
 COPY --chown=testuser:testuser . ./
+ARG git_branch
+ARG git_commit_sha
+ARG git_is_dirty
+ENV GIT_BRANCH=${git_branch} \
+    GIT_COMMIT_SHA=${git_commit_sha} \
+    GIT_IS_DIRTY=${git_is_dirty}
 RUN npm run build-prod
 
 
