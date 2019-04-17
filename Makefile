@@ -103,8 +103,8 @@ e2e-debug:
 artifacts-deploy:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
 	@echo "Artifacts deployed successfully"
-	@echo "S3 URI: $(S3_KEY_PREFIX_URI)
-	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)
+	@echo "S3 URI: $(S3_KEY_PREFIX_URI)"
+	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)"
 
 .PHONY: infra-plan
 infra-plan:
