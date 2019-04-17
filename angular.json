@@ -169,6 +169,10 @@
             "ci": {
               "protractorConfig": "e2e/protractor.ci.conf.js",
               "devServerTarget": ""
+            },
+            "smoke": {
+              "protractorConfig": "e2e/protractor.smoke.conf.js",
+              "devServerTarget": ""
             }
           }
         },

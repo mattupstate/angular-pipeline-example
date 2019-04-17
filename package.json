@@ -15,6 +15,7 @@
     "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities | .moderate + .high + .critical > 3') = \"false\" ] || npm audit",
     "e2e": "ng e2e",
     "e2e-ci": "ng e2e -c ci",
+    "smoke-ci": "ng e2e -c smoke",
     "build-stamp": "./bin/build-stamp src/environments/build-info.prod.ts"
   },
   "private": true,
