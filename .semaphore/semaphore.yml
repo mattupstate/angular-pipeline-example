@@ -46,7 +46,7 @@ blocks:
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make deploy-image infra-plan
+          - make infra-plan
 
 promotions:
   - name: Deploy
