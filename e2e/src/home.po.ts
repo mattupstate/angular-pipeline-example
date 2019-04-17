@@ -10,4 +10,8 @@ export class HomePage extends PageObject {
   getPageContent() {
     return element(by.css('app-root p')).getText() as Promise<string>;
   }
+
+  commitHash() {
+    return element(by.exactBinding('gitCommit')).getText() as Promise<string>;
+  }
 }
