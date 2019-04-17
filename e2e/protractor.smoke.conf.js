@@ -3,7 +3,7 @@
 
 const { config, params } = require('./protractor.shared.conf');
 
-config.baseUrl = 'http://angular-pipeline-example.mattupstate.com/en-US/';
+config.baseUrl = `http://${params.buildInfo.gitCommit}.angular-pipeline-example.mattupstate.com/en-US/`;
 config.seleniumAddress = 'http://hub:4444/wd/hub';
 config.multiCapabilities = [{
   browserName: 'firefox'
