@@ -5,12 +5,12 @@ agent:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
-  - name: Artifacts
+  - name: Publish
     task:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
-      - name: Production
+      - name: Artifacts
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
@@ -25,12 +25,12 @@ blocks:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
           - make smoke-test
-  - name: Infrastructure
+  - name: Deploy
     task:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
-      - name: Smoke
+      - name: Infrastructure
         commands:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
