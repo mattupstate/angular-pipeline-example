@@ -112,6 +112,6 @@ infra-plan:
 
 .PHONY: infra-deploy
 infra-deploy:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(DEPLOY_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
 	@echo "Infrastructure deployed successfully"
-	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)
+	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)"
