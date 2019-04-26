@@ -1,0 +1,26 @@
+steps:
+  - command: "make test-image-buildkite dist-image-buildkite"
+    label: "Build"
+  - wait
+  - command: "make test"
+    label: "Test"
+  - command: "make analysis"
+    label: "Analysis"
+  - command: "make audit"
+    label: "Audit"
+  - command: "make e2e"
+    label: "End-to-End"
+  - command: "make infra-plan"
+    label: "Infra Plan"
+  # - wait
+  # - command: "make artifacts-deploy"
+  #   label: "Publish"
+  #   branches: "master"
+  # - wait
+  # - command: "make smoke-test"
+  #   label: "Smoke Test"
+  #   branches: "master"
+  # - wait
+  # - command: "make infra-deploy"
+  #   label: "Deploy"
+  #   branches: "master"
