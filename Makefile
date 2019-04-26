@@ -50,7 +50,7 @@ dist-image: test-image
 	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: dist-image-buildkite
-dist-image-buildkite: test-image-buildkite
+dist-image-buildkite:
 	docker build --pull $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: test-image-push
