@@ -1,8 +1,6 @@
 steps:
-  - command: "make test-image-buildkite"
-    label: ":docker: Test Image"
-  - command: "make dist-image-buildkite"
-    label: ":docker: Dist Image"
+  - command: "make test-image-buildkite dist-image-buildkite"
+    label: ":docker: Images"
   - wait
   - command: "make test"
     label: ":angular: Test"
@@ -26,3 +24,5 @@ steps:
   # - command: "make infra-deploy"
   #   label: "Deploy"
   #   branches: "master"
+  #   concurrency: 1
+  #   concurrency_group: 'deploy'
