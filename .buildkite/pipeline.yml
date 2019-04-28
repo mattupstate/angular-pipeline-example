@@ -1,0 +1,28 @@
+steps:
+  - command: "make test-image-buildkite dist-image-buildkite"
+    label: ":docker: Images"
+  - wait
+  - command: "make test"
+    label: ":angular: Test"
+  - command: "make analysis"
+    label: ":eslint: Analysis"
+  - command: "make audit"
+    label: ":nodesecurity: Audit"
+  - command: "make e2e"
+    label: ":protractor: End-to-End"
+  - command: "make infra-plan"
+    label: ":terraform: Infra Plan"
+  # - wait
+  # - command: "make artifacts-deploy"
+  #   label: "Publish"
+  #   branches: "master"
+  # - wait
+  # - command: "make smoke-test"
+  #   label: "Smoke Test"
+  #   branches: "master"
+  # - wait
+  # - command: "make infra-deploy"
+  #   label: "Deploy"
+  #   branches: "master"
+  #   concurrency: 1
+  #   concurrency_group: 'deploy'
