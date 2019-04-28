@@ -1,8 +1,8 @@
 steps:
   - command: "make test-image-buildkite"
-    label: ":building_construction: Test Image"
+    label: ":docker: Test Image"
   - command: "make dist-image-buildkite"
-    label: ":building_construction: Dist Image"
+    label: ":docker: Dist Image"
   - wait
   - command: "make test"
     label: ":angular: Test"
