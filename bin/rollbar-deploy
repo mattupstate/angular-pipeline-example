@@ -15,8 +15,14 @@ if [[ -z ${GIT_COMMIT_AUTHOR+x} ]]; then
   exit 1
 fi
 
-curl https://api.rollbar.com/api/1/deploy/ \
+if [[ -z ${DEPLOY_STATUS+x} ]]; then
+  echo 'DEPLOY_STATUS is not set'
+  exit 1
+fi
+
+curl -f https://api.rollbar.com/api/1/deploy/ \
   -F access_token=${ROLLBAR_ACCESS_TOKEN} \
+  -F status=${DEPLOY_STATUS} \
   -F environment=production \
   -F revision=${GIT_COMMIT_SHA} \
   -F local_username=${GIT_COMMIT_AUTHOR}
