@@ -29,7 +29,7 @@ const segmentAnalyticsFactory = (localeId: string) => {
 
 const rollbarFactory = () => {
   return new Rollbar({
-    codeVersion: BuildInfo.gitCommitHash,
+    code_version: BuildInfo.gitCommitHash,
     ...environment.rollbar
   });
 };
