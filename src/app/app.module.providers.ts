@@ -23,10 +23,6 @@ const segmentAnalyticsFactory = (localeId: string) => {
   return new SegmentAnalytics(window.analytics, {localeId, ...BuildInfo}, !environment.production);
 };
 
-const rollbarFactory = () => {
-  return new Rollbar(environment.rollbar);
-};
-
 export const appInitializer = {
   provide: APP_INITIALIZER,
   multi: true,
@@ -42,14 +38,4 @@ export const segmentAnalyticsProvider = {
 export const routerAnalyticsProvider = {
   provide: NavigationAnalyticsService,
   useClass: RouterAnalyticsService
-};
-
-export const rollbarErrorHandlerProvider = {
-  provide: ErrorHandler,
-  useClass: RollbarErrorHandler
-};
-
-export const rollbarServiceProvider = {
-  provide: RollbarService,
-  useFactory: rollbarFactory
 };
