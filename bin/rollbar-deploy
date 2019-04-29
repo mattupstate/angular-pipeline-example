@@ -1,0 +1,22 @@
+#!/bin/bash -e
+
+if [[ -z ${ROLLBAR_ACCESS_TOKEN+x} ]]; then
+  echo 'ROLLBAR_ACCESS_TOKEN is not set'
+  exit 1
+fi
+
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+if [[ -z ${GIT_COMMIT_AUTHOR+x} ]]; then
+  echo 'GIT_COMMIT_AUTHOR is not set'
+  exit 1
+fi
+
+curl https://api.rollbar.com/api/1/deploy/ \
+  -F access_token=${ROLLBAR_ACCESS_TOKEN} \
+  -F environment=production \
+  -F revision=${GIT_COMMIT_SHA} \
+  -F local_username=${GIT_COMMIT_AUTHOR}

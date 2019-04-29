@@ -4,6 +4,7 @@ PROJECT_NAME ?= $(shell jq -r '.name' package.json)
 GIT_COMMIT_SHA ?= $(shell git rev-parse --verify --short HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
+GIT_COMMIT_AUTHOR ?= $(shell git log -1 --format="%ae")
 DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
 IMAGE_BASE_NAME ?= mattupstate/$(PROJECT_NAME)
 TEST_CHECKSUM ?= $(shell ./bin/md5 package-lock.json Dockerfile)
@@ -122,5 +123,7 @@ infra-plan:
 .PHONY: infra-deploy
 infra-deploy:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
+	@./bin/rollbar-deploy
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)"
+
