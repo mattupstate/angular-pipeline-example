@@ -21,12 +21,14 @@ DIST_ARCHIVE_FILENAME ?= dist.tar
 DIST_ARCHIVE_CONTAINER_NAME ?= $(PROJECT_NAME)-dist
 DIST_ARCHIVE_SRC_DIR ?= /usr/share/app/dist
 DEPLOY_CONTAINER_NAME ?= $(PROJECT_NAME)-deploy
-DEPLOY_ENV_ARGS ?= $(addprefix --env ,FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
+DEPLOY_ENV_ARGS ?= $(addprefix --env ,ROLLBAR_ACCESS_TOKEN FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
 TERRAFORM_VAR_ARGS ?= $(addprefix -var ,'target_version=$(GIT_COMMIT_SHA)')
 DEPLOY_BUCKET_NAME ?= angular-pipeline-example.mattupstate.com
 S3_KEY_PREFIX_URI ?= s3://$(DEPLOY_BUCKET_NAME)/$(GIT_COMMIT_SHA)/
 PUBLIC_ROOT_HOSTNAME ?= angular-pipeline-example.mattupstate.com
+PUBLIC_ROOT_URL ?= http://$(PUBLIC_ROOT_HOSTNAME)
 PUBLIC_VERSIONED_HOSTNAME ?= $(GIT_COMMIT_SHA).$(PUBLIC_ROOT_HOSTNAME)
+PUBLIC_VERSIONED_URL ?= http://$(PUBLIC_VERSIONED_HOSTNAME)
 ENV_FILE ?= .envrc
 REPORTS_DIR ?= ./reports
 E2E_REPORTS_DIR ?= $(REPORTS_DIR)/e2e
@@ -114,7 +116,7 @@ artifacts-deploy:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
 	@echo "Artifacts deployed successfully"
 	@echo "S3 URI: $(S3_KEY_PREFIX_URI)"
-	@echo "HTTP URI: http://$(PUBLIC_VERSIONED_HOSTNAME)"
+	@echo "HTTP URI: $(PUBLIC_VERSIONED_URL)"
 
 .PHONY: infra-plan
 infra-plan:
@@ -123,9 +125,9 @@ infra-plan:
 .PHONY: infra-deploy
 infra-deploy:
 	GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy started
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)' \
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR) && GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps' \
 		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
 		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"
-	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)"
+	@echo "HTTP URI: $(PUBLIC_ROOT_URL)
 

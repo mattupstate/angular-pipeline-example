@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+for LOCALE_DIR in $(ls -d dist/*); do
+  LOCALE=$(basename ${LOCALE_DIR})
+
+  for FILENAME in $(ls ${LOCALE_DIR}/*.js); do
+    BASENAME=$(basename ${FILENAME})
+    MINIFIED_URL=${PUBLIC_ROOT_URL}/${LOCALE}/${BASENAME}
+    SOURCE_MAP_FILE=${LOCALE_DIR}/${BASENAME}.map
+
+    echo "Mapping ${MINIFIED_URL} to ${SOURCE_MAP_FILE}"
+
+    curl -s https://api.rollbar.com/api/1/sourcemap \
+      -F access_token=${ROLLBAR_ACCESS_TOKEN} \
+      -F version=${GIT_COMMIT_SHA} \
+      -F minified_url=${MINIFIED_URL}\
+      -F source_map=@${SOURCE_MAP_FILE}
+  done
+done
+
