@@ -1,9 +1,7 @@
-import { APP_INITIALIZER, LOCALE_ID, ErrorHandler } from '@angular/core';
-import * as Rollbar from 'rollbar';
+import { APP_INITIALIZER, LOCALE_ID } from '@angular/core';
 import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
 import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
-import { RollbarErrorHandler, RollbarService } from './rollbar-error-handler';
 import { BuildInfo } from '../environments/build-info';
 import { environment } from '../environments/environment';
 

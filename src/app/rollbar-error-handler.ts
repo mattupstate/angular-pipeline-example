@@ -27,6 +27,6 @@ export const rollbarServiceProvider = {
   useFactory: rollbarFactory
 };
 
-export const rollbarProviders = (environment.production)
+export const rollbarProviders = (environment.rollbar.enabled)
   ? [rollbarErrorHandlerProvider, rollbarServiceProvider]
   : [];
