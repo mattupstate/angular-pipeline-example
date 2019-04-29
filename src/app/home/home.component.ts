@@ -9,4 +9,7 @@ export class HomeComponent {
 
   constructor() { }
 
+  throwError() {
+    throw Error('Error simulation');
+  }
 }
