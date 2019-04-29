@@ -10,7 +10,7 @@ for LOCALE_DIR in $(ls -d dist/*); do
 
     echo "Mapping ${MINIFIED_URL} to ${SOURCE_MAP_FILE}"
 
-    curl -s https://api.rollbar.com/api/1/sourcemap \
+    curl -s -o /dev/null https://api.rollbar.com/api/1/sourcemap \
       -F access_token=${ROLLBAR_ACCESS_TOKEN} \
       -F version=${GIT_COMMIT_SHA} \
       -F minified_url=${MINIFIED_URL}\

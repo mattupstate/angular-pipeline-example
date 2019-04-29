@@ -44,14 +44,14 @@ case ${DEPLOY_STATUS} in
     echo "Rollbar notified of deploy: deploy_id=${DEPLOY_ID} revision=${GIT_COMMIT_SHA} status=${DEPLOY_STATUS}"
     ;;
   succeeded)
-    curl -f -XPATCH https://api.rollbar.com/api/1/deploy/${DEPLOY_ID} \
+    curl -f -o /dev/null -XPATCH https://api.rollbar.com/api/1/deploy/${DEPLOY_ID} \
       -F access_token=${ROLLBAR_ACCESS_TOKEN} \
       -F status=succeeded
     echo
     echo "Rollbar deploy updated: id=${DEPLOY_ID} status=${DEPLOY_STATUS}"
     ;;
   failed)
-    curl -f -XPATCH https://api.rollbar.com/api/1/deploy/${DEPLOY_ID} \
+    curl -f -o /dev/null -XPATCH https://api.rollbar.com/api/1/deploy/${DEPLOY_ID} \
       -F access_token=${ROLLBAR_ACCESS_TOKEN} \
       -F status=failed
     echo

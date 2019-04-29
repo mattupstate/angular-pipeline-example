@@ -129,5 +129,5 @@ infra-deploy:
 		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
 		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"
-	@echo "HTTP URI: $(PUBLIC_ROOT_URL)
+	@echo "HTTP URI: $(PUBLIC_ROOT_URL)"
 
