@@ -6,6 +6,9 @@
 .editorconfig
 .semaphore
 .terraform
+bin/cc-test-reporter
+bin/md5
+bin/rollbar-deploy
 dist
 docker-compose.yml
 Makefile
