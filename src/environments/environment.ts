@@ -9,9 +9,7 @@ export const environment = {
     }
   },
   rollbar: {
-    accessToken: 'bcbcced242ca43a9b9e8c3cbce7f32d4',
-    captureUncaught: false,
-    captureUnhandledRejections: false
+    enabled: false
   }
 };
 
