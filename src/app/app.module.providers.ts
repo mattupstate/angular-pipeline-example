@@ -2,7 +2,7 @@ import { APP_INITIALIZER, LOCALE_ID, ErrorHandler } from '@angular/core';
 import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
 import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
-import { GlobalErrorHandler } from './rollbar-error-handler';
+import { GlobalErrorHandler } from './global-error-handler';
 import { BuildInfo } from '../environments/build-info';
 import { environment } from '../environments/environment';
 import { Rollbar, RollbarService } from './rollbar.service';
