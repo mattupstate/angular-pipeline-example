@@ -122,10 +122,10 @@ infra-plan:
 
 .PHONY: infra-deploy
 infra-deploy:
-	DEPLOY_STATUS=started GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy
+	GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy started
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)' \
-		&& DEPLOY_STATUS=succeeded GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy \
-		|| DEPLOY_STATUS=failed GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy
+		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
+		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: http://$(DEPLOY_BUCKET_NAME)"
 
