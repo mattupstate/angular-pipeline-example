@@ -26,3 +26,6 @@ curl -f https://api.rollbar.com/api/1/deploy/ \
   -F environment=production \
   -F revision=${GIT_COMMIT_SHA} \
   -F local_username=${GIT_COMMIT_AUTHOR}
+
+echo
+echo "Rollbar notified of deploy: revision=${GIT_COMMIT_SHA} status=${DEPLOY_STATUS}"
