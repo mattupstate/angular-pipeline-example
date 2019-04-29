@@ -23,7 +23,7 @@ if [[ -z ${1+x} ]]; then
 fi
 
 DEPLOY_ID=""
-DEPLOY_ID_FILE=${DEPLOY_ID_FILE:.deploy_id}
+DEPLOY_ID_FILE=.deploy_id
 
 if [[ -f ${DEPLOY_ID_FILE} ]]; then
   DEPLOY_ID=$(cat ${DEPLOY_ID_FILE})
@@ -39,7 +39,7 @@ case ${DEPLOY_STATUS} in
       -F environment=production \
       -F revision=${GIT_COMMIT_SHA} \
       -F local_username=${GIT_COMMIT_AUTHOR} | jq -r '.data.deploy_id')
-    echo $DEPLOY_ID > ${DEPLOY_ID_FILE}
+    echo "$DEPLOY_ID" > ${DEPLOY_ID_FILE}
     echo
     echo "Rollbar notified of deploy: deploy_id=${DEPLOY_ID} revision=${GIT_COMMIT_SHA} status=${DEPLOY_STATUS}"
     ;;
