@@ -1,3 +1,5 @@
+import { BuildInfo } from './build-info';
+
 export const environment = {
   production: true,
   segment: {
@@ -10,9 +12,12 @@ export const environment = {
   },
   rollbar: {
     accessToken: 'bcbcced242ca43a9b9e8c3cbce7f32d4',
-    environment: 'production',
     enabled: true,
     captureUncaught: true,
-    captureUnhandledRejections: true
+    captureUnhandledRejections: true,
+    payload: {
+      environment: 'production',
+      code_version: BuildInfo.gitCommitHash
+    }
   }
 };
