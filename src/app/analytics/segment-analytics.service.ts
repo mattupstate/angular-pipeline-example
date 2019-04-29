@@ -1,5 +1,3 @@
-import { BuildInfo } from '../../environments/build-info';
-
 export class SegmentAnalytics {
   constructor(private analytics: any, private staticProperties: object, debug = false) {
     if (debug) {

@@ -1,5 +1,4 @@
 import { SegmentAnalytics } from './segment-analytics.service';
-import { BuildInfo } from 'src/environments/build-info';
 
 describe('SegmentAnalytics', () => {
   const localeId = 'en-US';
