@@ -15,9 +15,7 @@ export const environment = {
     enabled: true,
     captureUncaught: true,
     captureUnhandledRejections: true,
-    payload: {
-      environment: 'production',
-      code_version: BuildInfo.gitCommitHash
-    }
+    environment: 'production',
+    codeVersion: BuildInfo.gitCommitHash
   }
 };
