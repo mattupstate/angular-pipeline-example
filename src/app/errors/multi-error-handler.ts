@@ -1,10 +1,9 @@
-import { Injectable, ErrorHandler, EventEmitter } from '@angular/core';
+import { ErrorHandler, EventEmitter } from '@angular/core';
 
 export interface ErrorEvent {
   error: any;
 }
 
-@Injectable()
 export class MultiErrorHandler implements ErrorHandler {
 
   readonly events: EventEmitter<ErrorEvent> = new EventEmitter();
