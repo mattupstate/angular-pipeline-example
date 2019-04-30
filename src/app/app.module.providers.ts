@@ -1,11 +1,11 @@
 import { APP_INITIALIZER, LOCALE_ID, ErrorHandler } from '@angular/core';
-import * as Rollbar from 'rollbar';
 import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
 import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
 import { BuildInfo } from '../environments/build-info';
 import { environment } from '../environments/environment';
-import { RollbarErrorHandler } from './errors/rollbar-error-handler';
+import { RollbarService, Rollbar } from './errors/rollbar.service';
+import { RollbarErrorHandler   } from './errors/rollbar-error-handler';
 import { SentryErrorHandler } from './errors/sentry-error-handler';
 
 declare var window: any;
@@ -32,9 +32,9 @@ const rollbarFactory = () => {
   return new Rollbar(environment.rollbar);
 };
 
-const sentryErrorHandlerFactory = () => {
+export function sentryErrorHandlerFactory() {
   return new SentryErrorHandler(environment.sentry);
-};
+}
 
 export const appInitializer = {
   provide: APP_INITIALIZER,
@@ -53,14 +53,14 @@ export const routerAnalyticsProvider = {
   useClass: RouterAnalyticsService
 };
 
-export const rollbarServiceProvider = {
-  provide: Rollbar,
-  useFactory: rollbarFactory
-};
-
 export const rollbarErrorHandlerProvider = {
   provide: ErrorHandler,
   useClass: RollbarErrorHandler
+};
+
+export const rollbarServiceProvider = {
+  provide: RollbarService,
+  useFactory: rollbarFactory
 };
 
 export const sentryErrorHandlerProvider = {
@@ -72,7 +72,7 @@ export const dynamicProviders = [
   appInitializer,
   segmentAnalyticsProvider,
   routerAnalyticsProvider,
-  rollbarFactory,
   rollbarErrorHandlerProvider,
+  rollbarServiceProvider,
   sentryErrorHandlerProvider
 ];

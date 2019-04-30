@@ -1,11 +1,8 @@
-import { ErrorHandler, InjectionToken, Inject, Injectable } from '@angular/core';
-import * as Rollbar from 'rollbar';
-
-export const RollbarService = new InjectionToken<Rollbar>('rollbar');
+import { ErrorHandler, Inject, Injectable } from '@angular/core';
+import { Rollbar, RollbarService } from './rollbar.service';
 
 @Injectable()
 export class RollbarErrorHandler implements ErrorHandler {
-
   constructor(@Inject(RollbarService) private rollbar: Rollbar) {}
 
   handleError(err: any): void {
