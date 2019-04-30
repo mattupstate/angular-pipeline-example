@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 CI ?= false
 PROJECT_NAME ?= $(shell jq -r '.name' package.json)
-GIT_COMMIT_SHA ?= $(shell git rev-parse --verify --short HEAD)
+GIT_COMMIT_SHA ?= $(shell git rev-parse --verify HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
 GIT_COMMIT_AUTHOR ?= $(shell git log -1 --format="%ae")
@@ -25,7 +25,7 @@ PUBLIC_ROOT_URL ?= http://$(PUBLIC_ROOT_HOSTNAME)
 PUBLIC_VERSIONED_HOSTNAME ?= $(GIT_COMMIT_SHA).$(PUBLIC_ROOT_HOSTNAME)
 PUBLIC_VERSIONED_URL ?= http://$(PUBLIC_VERSIONED_HOSTNAME)
 DEPLOY_CONTAINER_NAME ?= $(PROJECT_NAME)-deploy
-DEPLOY_ENV_ARGS ?= $(addprefix --env ,ROLLBAR_ACCESS_TOKEN FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
+DEPLOY_ENV_ARGS ?= $(addprefix --env ,SENTRY_AUTH_TOKEN SENTRY_ORG ROLLBAR_ACCESS_TOKEN FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
 TERRAFORM_VAR_ARGS ?= $(addprefix -var ,'target_version=$(GIT_COMMIT_SHA)')
 S3_KEY_PREFIX_URI ?= s3://$(PUBLIC_ROOT_HOSTNAME)/$(GIT_COMMIT_SHA)/
 REPORTS_DIR ?= ./reports
@@ -123,7 +123,7 @@ infra-plan:
 .PHONY: infra-deploy
 infra-deploy:
 	GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy started
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR) && PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps' \
+	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR) && PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps && GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/sentry-release' \
 		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
 		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"

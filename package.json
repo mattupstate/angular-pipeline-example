@@ -40,6 +40,7 @@
     "@angular/cli": "~7.3.8",
     "@angular/compiler-cli": "~7.2.13",
     "@angular/language-service": "~7.2.13",
+    "@sentry/cli": "^1.41.2",
     "@types/jasmine": "~2.8.8",
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "~8.9.4",
