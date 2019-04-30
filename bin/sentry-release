@@ -1,4 +1,0 @@
-#!/bin/bash -e
-
-npx sentry-cli releases new -p angular-pipeline-example ${GIT_COMMIT_SHA}
-npx sentry-cli releases set-commits --auto ${GIT_COMMIT_SHA}
