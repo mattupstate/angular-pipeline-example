@@ -3,6 +3,7 @@ import { Rollbar, RollbarService } from './rollbar.service';
 
 @Injectable()
 export class RollbarErrorHandler implements ErrorHandler {
+
   constructor(@Inject(RollbarService) private rollbar: Rollbar) {}
 
   handleError(err: any): void {

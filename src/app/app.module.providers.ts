@@ -7,6 +7,7 @@ import { environment } from '../environments/environment';
 import { RollbarService, Rollbar } from './errors/rollbar.service';
 import { RollbarErrorHandler   } from './errors/rollbar-error-handler';
 import { SentryErrorHandler } from './errors/sentry-error-handler';
+import { MultiErrorHandler } from './errors/multi-error-handler';
 
 declare var window: any;
 
@@ -28,13 +29,12 @@ const segmentAnalyticsFactory = (localeId: string) => {
   );
 };
 
-const rollbarFactory = () => {
-  return new Rollbar(environment.rollbar);
+const multiErrorHandlerFactory = () => {
+  return new MultiErrorHandler([
+    new RollbarErrorHandler(new Rollbar(environment.rollbar)),
+    new SentryErrorHandler(environment.sentry)
+  ]);
 };
-
-export function sentryErrorHandlerFactory() {
-  return new SentryErrorHandler(environment.sentry);
-}
 
 export const appInitializer = {
   provide: APP_INITIALIZER,
@@ -53,26 +53,14 @@ export const routerAnalyticsProvider = {
   useClass: RouterAnalyticsService
 };
 
-export const rollbarErrorHandlerProvider = {
+export const multiErrorHandlerProvider = {
   provide: ErrorHandler,
-  useClass: RollbarErrorHandler
-};
-
-export const rollbarServiceProvider = {
-  provide: RollbarService,
-  useFactory: rollbarFactory
-};
-
-export const sentryErrorHandlerProvider = {
-  provide: ErrorHandler,
-  userFactory: sentryErrorHandlerFactory
+  useFactory: multiErrorHandlerFactory
 };
 
 export const dynamicProviders = [
   appInitializer,
   segmentAnalyticsProvider,
   routerAnalyticsProvider,
-  rollbarErrorHandlerProvider,
-  rollbarServiceProvider,
-  sentryErrorHandlerProvider
+  multiErrorHandlerProvider
 ];
