@@ -20,7 +20,7 @@ function getGitBranch() {
 }
 
 function getGitCommitHash() {
-  return process.env.GIT_COMMIT_SHA || exec('git rev-parse --verify --short HEAD');
+  return process.env.GIT_COMMIT_SHA || exec('git rev-parse --verify HEAD');
 }
 
 function isGitDirty() {
