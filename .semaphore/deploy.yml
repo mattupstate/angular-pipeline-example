@@ -15,16 +15,16 @@ blocks:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
           - make artifacts-deploy
-  - name: Tests
-    task:
-      secrets:
-        - name: angular-pipeline-example-secrets
-      jobs:
-      - name: Smoke
-        commands:
-          - checkout
-          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make smoke-test
+  # - name: Tests
+  #   task:
+  #     secrets:
+  #       - name: angular-pipeline-example-secrets
+  #     jobs:
+  #     - name: Smoke
+  #       commands:
+  #         - checkout
+  #         - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+  #         - make smoke-test
   - name: Deploy
     task:
       secrets:
