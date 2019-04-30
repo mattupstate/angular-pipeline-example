@@ -28,6 +28,7 @@
     "@angular/platform-browser": "~7.2.13",
     "@angular/platform-browser-dynamic": "~7.2.13",
     "@angular/router": "~7.2.13",
+    "@sentry/browser": "^5.1.1",
     "core-js": "~2.6.5",
     "rollbar": "^2.6.1",
     "rxjs": "~6.3.3",

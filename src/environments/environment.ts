@@ -10,6 +10,9 @@ export const environment = {
   },
   rollbar: {
     enabled: false
+  },
+  sentry: {
+    enabled: false
   }
 };
 
