@@ -4,7 +4,7 @@ import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
 import { BuildInfo } from '../environments/build-info';
 import { environment } from '../environments/environment';
-import { RollbarService, Rollbar } from './errors/rollbar.service';
+import { Rollbar } from './errors/rollbar.service';
 import { RollbarErrorHandler   } from './errors/rollbar-error-handler';
 import { SentryErrorHandler } from './errors/sentry-error-handler';
 import { MultiErrorHandler } from './errors/multi-error-handler';
