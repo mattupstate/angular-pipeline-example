@@ -126,6 +126,7 @@ infra-deploy:
 	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR) && PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps' \
 		&& docker run --rm $(DEPLOY_ENV_ARGS) -v $(PWD):/work getsentry/sentry-cli releases new -p angular-pipeline-example $(GIT_COMMIT_SHA) \
 		&& docker run --rm $(DEPLOY_ENV_ARGS) -v $(PWD):/work getsentry/sentry-cli releases set-commits --auto $(GIT_COMMIT_SHA) \
+		&& docker run --rm $(DEPLOY_ENV_ARGS) -v $(PWD):/work getsentry/sentry-cli releases deploys $(GIT_COMMIT_SHA) new -e production \
 		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
 		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"
