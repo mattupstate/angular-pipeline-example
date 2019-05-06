@@ -170,7 +170,7 @@ artifacts-deploy:
 		-v $(PWD)/dist:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(RELEASE_S3_KEY_PREFIX)
 	# Upload source maps to Rollbar
-	PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps'
+	PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps
 	# Notify Sentry of new release
 	$(SENTRY_CLI_COMMAND) releases new -p angular-pipeline-example $(GIT_COMMIT_SHA)
 	$(SENTRY_CLI_COMMAND) releases set-commits --auto $(GIT_COMMIT_SHA)
