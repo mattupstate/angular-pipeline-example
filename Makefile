@@ -93,21 +93,21 @@ test:
 		--security-opt seccomp=$(TEST_CONTAINER_SECCOMP_FILE) $(TEST_IMAGE) \
 		/bin/bash -c 'npm run test-ci'
 	# Fetch global Allure history from S3 repository
-	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(APP_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli \
 			s3 cp --recursive $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Geberate Allure report
-	docker run --rm \
+	[[ "$(CI)" == "true" ]] && docker run --rm \
 		-v $(PWD)$(APP_ALLURE_DIR):/usr/src/allure \
 			mattupstate/allure generate --clean --report-dir html xml
 	# Copy test reports to build artifact S3 repository
-	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
 		mesosphere/aws-cli \
 			s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX)
 	# Copy build Allure hisitory to global Allure history S3 repository
-	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(APP_ALLURE_REPORT_HISTORY_DIR):/work --workdir /work \
 		mesosphere/aws-cli \
 			s3 cp --acl private --recursive /work $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX)
@@ -123,21 +123,21 @@ e2e:
 	$(E2E_COMPOSE_COMMAND) down || :
 	$(E2E_COMPOSE_COMMAND) up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
 	# Fetch global Allure history from S3 repository
-	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(E2E_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli \
 			s3 cp --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Geberate Allure report
-	docker run --rm \
+	[[ "$(CI)" == "true" ]] && docker run --rm \
 		-v $(PWD)$(E2E_ALLURE_DIR):/usr/src/allure \
 			mattupstate/allure generate --clean --report-dir html xml
 	# Copy test reports to build artifact S3 repository
-	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
 		mesosphere/aws-cli \
 			s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX)
 	# Copy build Allure hisitory to global Allure history S3 repository
-	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(E2E_ALLURE_REPORT_HISTORY_DIR):/work --workdir /work \
 		mesosphere/aws-cli \
 			s3 cp --acl private --recursive /work $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX)
