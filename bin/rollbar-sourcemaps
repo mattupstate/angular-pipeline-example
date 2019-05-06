@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+if [[ -z ${ROLLBAR_ACCESS_TOKEN+x} ]]; then
+  echo 'ROLLBAR_ACCESS_TOKEN is not set'
+  exit 1
+fi
+
 echo "Uploading source maps to Rollbar:"
 
 for LOCALE_DIR in $(ls -d dist/*); do
