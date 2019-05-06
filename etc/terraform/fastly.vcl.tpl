@@ -7,9 +7,9 @@ sub vcl_recv {
     set req.http.X-Current-Language = re.group.1;
 
     if (req.http.host ~ "^([a-zA-Z0-9]+)\.angular\-pipeline\-example\.mattupstate\.com$") {
-      set req.http.X-Key-Prefix = "/" re.group.1;
+      set req.http.X-Key-Prefix = "/releases/" re.group.1;
     } else {
-      set req.http.X-Key-Prefix = "/${target_version}";
+      set req.http.X-Key-Prefix = "/releases/${target_version}";
     }
 
     if (req.url ~ "\.(js|map|css|txt|html|ico|png|gif|jpg)$") {
