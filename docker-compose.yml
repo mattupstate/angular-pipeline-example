@@ -32,8 +32,6 @@ services:
   protractor:
     image: ${TEST_IMAGE}
     command: ./bin/wait-for-hub npm run ${NPM_SCRIPT:-e2e-ci}
-    volumes:
-      - ${LOCAL_E2E_REPORTS_DIR}:${DOCKER_E2E_REPORTS_DIR}
     environment:
       - GIT_COMMIT_SHA=${GIT_COMMIT_SHA:-null}
     depends_on:
