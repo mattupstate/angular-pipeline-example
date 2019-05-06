@@ -5,8 +5,14 @@ const { SpecReporter } = require('jasmine-spec-reporter');
 const AllureReporter = require('jasmine-allure-reporter');
 
 const reporters = [
-  new AllureReporter({ resultsDir: './reports/e2e/allure' }),
-  new SpecReporter({spec: { displayStacktrace: true }})
+  new AllureReporter({
+    resultsDir: require('path').join(__dirname, '../reports/e2e/allure/xml')
+  }),
+  new SpecReporter({
+    spec: {
+      displayStacktrace: true
+    }
+  })
 ];
 
 const config = {
