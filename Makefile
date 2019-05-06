@@ -160,7 +160,8 @@ e2e-debug:
 
 .PHONY: artifacts-deploy
 artifacts-deploy:
-	docker run --rm -v $(PWD)/dist:/var/run/app/dist $(TEST_IMAGE) cp -r ./dist /var/run/app
+	docker create --name artifacts-$(DOCKER_BUILD_CHECKSUM) $(TEST_IMAGE)
+	docker cp artifacts-$(DOCKER_BUILD_CHECKSUM):$(DOCKER_SRC_DIR)/dist $(PWD)/
 	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)/dist:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(RELEASE_S3_KEY_PREFIX)
@@ -190,6 +191,7 @@ infra-deploy:
 	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
 		hashicorp/terraform init
+	# Apply infra changes and notify Rollbar and Sentry on success
 	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
 		hashicorp/terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) \
