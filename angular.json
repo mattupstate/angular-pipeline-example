@@ -184,6 +184,11 @@
               "**/node_modules/**"
             ],
             "format": "codeFrame"
+          },
+          "configurations": {
+            "ci": {
+              "format": "checkstyle"
+            }
           }
         }
       }
