@@ -5,56 +5,62 @@ GIT_COMMIT_SHA ?= $(shell git rev-parse --verify HEAD)
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
 GIT_COMMIT_AUTHOR ?= $(shell git log -1 --format="%ae")
-DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
+DOCKER_SRC_DIR ?= /usr/src/app
+DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,app_src_dir=$(DOCKER_SRC_DIR) git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
 IMAGE_BASE_NAME ?= mattupstate/$(PROJECT_NAME)
 TEST_CHECKSUM ?= $(shell ./bin/md5 package-lock.json Dockerfile)
 TEST_IMAGE ?= $(IMAGE_BASE_NAME):test-$(TEST_CHECKSUM)
 TEST_IMAGE_BUILD_TARGET ?= test
-TEST_CONTAINER_NAME ?= $(PROJECT_NAME)-test
 TEST_CONTAINER_SECCOMP_FILE ?= etc/docker/seccomp/chrome.json
-TEST_CONTAINER_SRC_DIR ?= /usr/src/app
-ANALYSIS_CONTAINER_NAME ?= $(PROJECT_NAME)-analysis
-AUDIT_CONTAINER_NAME ?= $(PROJECT_NAME)-audit
 DIST_IMAGE_BUILD_TARGET ?= dist
 DIST_IMAGE ?= $(IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)
-DIST_ARCHIVE_FILENAME ?= dist.tar
-DIST_ARCHIVE_CONTAINER_NAME ?= $(PROJECT_NAME)-dist
-DIST_ARCHIVE_SRC_DIR ?= /usr/share/app/dist
 PUBLIC_ROOT_HOSTNAME ?= angular-pipeline-example.mattupstate.com
 PUBLIC_ROOT_URL ?= http://$(PUBLIC_ROOT_HOSTNAME)
 PUBLIC_VERSIONED_HOSTNAME ?= $(GIT_COMMIT_SHA).$(PUBLIC_ROOT_HOSTNAME)
 PUBLIC_VERSIONED_URL ?= http://$(PUBLIC_VERSIONED_HOSTNAME)
 DEPLOY_CONTAINER_NAME ?= $(PROJECT_NAME)-deploy
-DEPLOY_ENV_ARGS ?= $(addprefix --env ,SENTRY_AUTH_TOKEN SENTRY_ORG ROLLBAR_ACCESS_TOKEN FASTLY_API_KEY DNSIMPLE_TOKEN DNSIMPLE_ACCOUNT AWS_REGION AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
+AWS_SECRETS ?= AWS_DEFAULT_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+AWS_DOCKER_ENV_SECRETS ?= $(addprefix --env ,$(AWS_SECRETS))
+SENTRY_SECRETS ?= SENTRY_AUTH_TOKEN SENTRY_ORG
+ROLLBAR_SECRETS ?= ROLLBAR_ACCESS_TOKEN
+FASTLY_SECRETS ?= FASTLY_API_KEY
+DNSIMPLE_SECRETS ?= DNSIMPLE_TOKEN
+ALL_ENV_SECRETS ?= $(AWS_SECRETS) $(SENTRY_SECRETS) $(ROLLBAR_SECRETS) $(FASTLY_SECRETS) $(DNSIMPLE_SECRETS)
+ALL_DOCKER_ENV_SECRETS ?= $(addprefix --env ,$(ALL_ENV_SECRETS))
 TERRAFORM_VAR_ARGS ?= $(addprefix -var ,'target_version=$(GIT_COMMIT_SHA)')
-S3_KEY_PREFIX_URI ?= s3://$(PUBLIC_ROOT_HOSTNAME)/$(GIT_COMMIT_SHA)/
-REPORTS_DIR ?= ./reports
+REPORTS_DIR ?= /reports
+APP_REPORTS_DIR ?= $(REPORTS_DIR)/app
+APP_COVERAGE_REPORT_DIR ?= $(APP_REPORTS_DIR)/coverage
+APP_COVERAGE_LCOV_FILE ?= $(APP_COVERAGE_REPORT_DIR)/lcov.info
+APP_ANALYSIS_DIR ?= $(APP_REPORTS_DIR)/lint
+APP_ALLURE_DIR ?= $(APP_REPORTS_DIR)/allure
+APP_ALLURE_RESULTS_DIR ?= $(APP_ALLURE_DIR)/xml
+APP_ALLURE_REPORT_DIR ?= $(APP_ALLURE_DIR)/html
+APP_ALLURE_REPORT_HISTORY_DIR ?= $(APP_ALLURE_REPORT_DIR)/history
 E2E_REPORTS_DIR ?= $(REPORTS_DIR)/e2e
-COVERAGE_DIR ?= $(REPORTS_DIR)/coverage
-ANALYSIS_DIR ?= $(REPORTS_DIR)/lint
-LCOV_FILE ?= $(COVERAGE_DIR)/lcov.info
-COVERAGE_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/coverage
-E2E_REPORTS_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/reports/e2e
-TERRAFORM_SRC_DIR ?= $(TEST_CONTAINER_SRC_DIR)/etc/terraform
+E2E_ALLURE_DIR ?= $(E2E_REPORTS_DIR)/allure
+E2E_ALLURE_RESULTS_DIR ?= $(E2E_ALLURE_DIR)/xml
+E2E_ALLURE_REPORT_DIR ?= $(E2E_ALLURE_DIR)/html
+E2E_ALLURE_REPORT_HISTORY_DIR ?= $(E2E_ALLURE_REPORT_DIR)/history
+E2E_REPORTS_SRC_DIR ?= $(DOCKER_SRC_DIR)/reports/e2e
+S3_ROOT_URI ?= s3://$(PUBLIC_ROOT_HOSTNAME)
+GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/allure/app/history/
+GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/allure/e2e/history/
+BUILD_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/builds/${GIT_COMMIT_SHA}/
+BUILD_REPORTS_S3_KEY_PREFIX ?= $(BUILD_S3_KEY_PREFIX)/reports/
+RELEASE_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/releases/$(GIT_COMMIT_SHA)/
+TERRAFORM_DIR ?= etc/terraform
+E2E_COMPOSE_COMMAND ?= LOCAL_E2E_REPORTS_DIR=$(PWD)$(E2E_REPORTS_DIR) DOCKER_E2E_REPORTS_DIR=$(DOCKER_SRC_DIR)$(E2E_REPORTS_DIR) SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose
+SMOKE_COMPOSE_COMMAND ?= NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) $(E2E_COMPOSE_COMMAND)
 
 .PHONY: test-image
 test-image:
 	docker pull $(TEST_IMAGE) || :
 	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
 
-.PHONY: test-image-buildkite
-test-image-buildkite:
-	docker --version
-	docker build --pull $(DOCKER_BUILD_ARGS) --target $(TEST_IMAGE_BUILD_TARGET) --tag $(TEST_IMAGE) .
-
 .PHONY: dist-image
 dist-image: test-image
 	docker build --pull --cache-from $(TEST_IMAGE) $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
-
-.PHONY: dist-image-buildkite
-dist-image-buildkite:
-	docker --version
-	docker build --pull $(DOCKER_BUILD_ARGS) --target $(DIST_IMAGE_BUILD_TARGET) --tag $(DIST_IMAGE) .
 
 .PHONY: test-image-push
 test-image-push:
@@ -64,69 +70,110 @@ test-image-push:
 dist-image-push:
 	docker push $(DIST_IMAGE)
 
-.PHONY: dist-archive
-dist-archive:
-	@docker rm $(DIST_ARCHIVE_CONTAINER_NAME) 2&>/dev/null || :
-	docker create --name $(DIST_ARCHIVE_CONTAINER_NAME) $(DIST_IMAGE)
-	docker cp $(DIST_ARCHIVE_CONTAINER_NAME):$(DIST_ARCHIVE_SRC_DIR) - > $(DIST_ARCHIVE_FILENAME)
+.PHONY: dist-dir
+dist-dir:
+	docker run --rm -v $(PWD)/dist:/var/run/app/dist $(TEST_IMAGE) cp -r ./dist /var/run/app
 
 .PHONY: audit
 audit:
-	@docker rm $(AUDIT_CONTAINER_NAME) 2&>/dev/null || :
-	docker run --name $(AUDIT_CONTAINER_NAME) $(TEST_IMAGE) npm run audit-ci
+	docker run --rm $(TEST_IMAGE) npm run audit-ci
 
 .PHONY: analysis
 analysis:
-	@docker rm $(ANALYSIS_CONTAINER_NAME) 2&>/dev/null || :
-	rm -rf $(ANALYSIS_DIR)
-	mkdir -p $(dir $(ANALYSIS_DIR))
-	docker run --name $(ANALYSIS_CONTAINER_NAME) $(TEST_IMAGE) npm run lint
+	docker run --rm $(TEST_IMAGE) npm run lint
 
 .PHONY: test
 test:
-	@docker rm $(TEST_CONTAINER_NAME) 2&>/dev/null || :
-	rm -rf $(COVERAGE_DIR)
-	mkdir -p $(dir $(COVERAGE_DIR))
 	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter before-build || :
-	docker run --name $(TEST_CONTAINER_NAME) --security-opt seccomp=$(TEST_CONTAINER_SECCOMP_FILE) $(TEST_IMAGE) npm run test-ci
-	docker cp $(TEST_CONTAINER_NAME):$(COVERAGE_SRC_DIR) $(COVERAGE_DIR)
-	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter format-coverage -o - -t lcov -p $(TEST_CONTAINER_SRC_DIR) $(COVERAGE_DIR)/lcov.info | ./bin/cc-test-reporter upload-coverage -i - || :
+	docker run --rm \
+		-v $(PWD)$(APP_REPORTS_DIR):$(DOCKER_SRC_DIR)$(APP_REPORTS_DIR) \
+		--env ALLURE_RESULTS_DIR=$(DOCKER_SRC_DIR)$(APP_ALLURE_RESULTS_DIR) \
+		--env COVERAGE_REPORT_DIR=$(DOCKER_SRC_DIR)$(APP_COVERAGE_REPORT_DIR) \
+		--security-opt seccomp=$(TEST_CONTAINER_SECCOMP_FILE) $(TEST_IMAGE) \
+		/bin/bash -c 'npm run test-ci'
+	# Fetch global Allure history from S3 repository
+	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-v $(PWD)$(APP_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
+		mesosphere/aws-cli \
+			s3 cp --recursive $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
+	# Geberate Allure report
+	docker run --rm \
+		-v $(PWD)$(APP_ALLURE_DIR):/usr/src/allure \
+			mattupstate/allure generate --clean --report-dir html xml
+	# Copy test reports to build artifact S3 repository
+	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
+		mesosphere/aws-cli \
+			s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX)
+	# Copy build Allure hisitory to global Allure history S3 repository
+	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-v $(PWD)$(APP_ALLURE_REPORT_HISTORY_DIR):/work --workdir /work \
+		mesosphere/aws-cli \
+			s3 cp --acl private --recursive /work $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX)
+	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter format-coverage -o - -t lcov -p $(DOCKER_SRC_DIR) $(PWD)$(APP_COVERAGE_LCOV_FILE) | ./bin/cc-test-reporter upload-coverage -i - || :
 
 .PHONY: smoke-test
 smoke-test:
-	NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose down || :
-	NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
+	$(SMOKE_COMPOSE_COMMAND) down || :
+	$(SMOKE_COMPOSE_COMMAND) up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
 
 .PHONY: e2e
 e2e:
-	rm -rf $(E2E_REPORTS_DIR)
-	mkdir -p $(dir $(E2E_REPORTS_DIR))
-	SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose down || :
-	SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
-	docker cp $$(SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose ps -q protractor):$(E2E_REPORTS_SRC_DIR) $(E2E_REPORTS_DIR)
+	$(E2E_COMPOSE_COMMAND) down || :
+	$(E2E_COMPOSE_COMMAND) up --abort-on-container-exit --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
+	# Fetch global Allure history from S3 repository
+	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-v $(PWD)$(E2E_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
+		mesosphere/aws-cli \
+			s3 cp --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
+	# Geberate Allure report
+	docker run --rm \
+		-v $(PWD)$(E2E_ALLURE_DIR):/usr/src/allure \
+			mattupstate/allure generate --clean --report-dir html xml
+	# Copy test reports to build artifact S3 repository
+	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
+		mesosphere/aws-cli \
+			s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX)
+	# Copy build Allure hisitory to global Allure history S3 repository
+	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-v $(PWD)$(E2E_ALLURE_REPORT_HISTORY_DIR):/work --workdir /work \
+		mesosphere/aws-cli \
+			s3 cp --acl private --recursive /work $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX)
 
 .PHONY: e2e-debug
 e2e-debug:
 	SELENIUM_CHROME_IMAGE=node-chrome-debug SELENIUM_FIREFOX_IMAGE=node-firefox-debug TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose up chrome firefox webapp
 
 .PHONY: artifacts-deploy
-artifacts-deploy:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) aws s3 cp --acl private --recursive ./dist $(S3_KEY_PREFIX_URI)
+artifacts-deploy: dist-dir
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) $(TEST_IMAGE) /bin/bash -c 'aws s3 cp --acl private --recursive ./dist $(RELEASE_S3_KEY_PREFIX) && PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps' \
+		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases new -p angular-pipeline-example $(GIT_COMMIT_SHA) \
+		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases set-commits --auto $(GIT_COMMIT_SHA) \
+		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases set-commits --auto $(GIT_COMMIT_SHA)
 	@echo "Artifacts deployed successfully"
-	@echo "S3 URI: $(S3_KEY_PREFIX_URI)"
+	@echo "S3 URI: $(RELEASE_S3_KEY_PREFIX)"
 	@echo "HTTP URI: $(PUBLIC_VERSIONED_URL)"
 
 .PHONY: infra-plan
 infra-plan:
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform plan $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR)'
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+		-v $(PWD):/work --workdir /work \
+		hashicorp/terraform init $(TERRAFORM_DIR)
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+		-v $(PWD):/work --workdir /work \
+		hashicorp/terraform plan $(TERRAFORM_VAR_ARGS) $(TERRAFORM_DIR)
 
 .PHONY: infra-deploy
 infra-deploy:
 	GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy started
-	docker run --rm --name $(DEPLOY_CONTAINER_NAME) $(DEPLOY_ENV_ARGS) $(TEST_IMAGE) /bin/bash -c 'terraform init $(TERRAFORM_SRC_DIR) && terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_SRC_DIR) && PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps' \
-		&& docker run --rm $(DEPLOY_ENV_ARGS) -v $(PWD):/work getsentry/sentry-cli releases new -p angular-pipeline-example $(GIT_COMMIT_SHA) \
-		&& docker run --rm $(DEPLOY_ENV_ARGS) -v $(PWD):/work getsentry/sentry-cli releases set-commits --auto $(GIT_COMMIT_SHA) \
-		&& docker run --rm $(DEPLOY_ENV_ARGS) -v $(PWD):/work getsentry/sentry-cli releases deploys $(GIT_COMMIT_SHA) new -e production \
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+		-v $(PWD):/work --workdir /work \
+		hashicorp/terraform init $(TERRAFORM_DIR)
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+		-v $(PWD):/work --workdir /work \
+		hashicorp/terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_DIR) \
+		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases deploys $(GIT_COMMIT_SHA) new -e production \
 		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
 		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"

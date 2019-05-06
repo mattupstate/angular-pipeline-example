@@ -6,11 +6,7 @@ RUN apt-get update \
       curl \
       gnupg \
       jq \
-      awscli \
       --no-install-recommends \
-    && curl -sSL https://releases.hashicorp.com/terraform/0.11.13/terraform_0.11.13_linux_amd64.zip > terraform.zip \
-    && unzip terraform.zip \
-    && mv terraform /usr/local/bin/ \
     && curl -sSL https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && echo "deb https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
@@ -27,18 +23,15 @@ RUN apt-get update \
       --no-install-recommends \
     && apt-get purge --auto-remove -y gnupg \
     && rm -rf /var/lib/apt/lists/*
+ARG app_src_dir
 RUN groupadd -r testuser \
     && useradd -r -g testuser -G audio,video testuser \
     && mkdir -p /home/testuser \
     && chown -R testuser:testuser /home/testuser \
-    && mkdir -p /usr/src/app \
-    && mkdir -p /usr/share/app \
-    && mkdir -p /usr/src/app/reports/coverage \
-    && mkdir -p /usr/src/app/reports/lint \
-    && chown -R testuser:testuser /usr/src/app \
-    && chown -R testuser:testuser /usr/share/app
+    && mkdir -p ${app_src_dir} \
+    && chown -R testuser:testuser ${app_src_dir}
 USER testuser
-WORKDIR /usr/src/app
+WORKDIR ${app_src_dir}
 COPY --chown=testuser:testuser package.json package-lock.json ./
 RUN npm ci
 COPY --chown=testuser:testuser . ./
@@ -53,4 +46,4 @@ RUN npm run build-prod
 
 FROM nginx:1.14.2-alpine AS dist
 COPY --chown=nginx:nginx etc/nginx/conf.d /etc/nginx/conf.d
-COPY --chown=nginx:nginx --from=test /usr/src/app/dist /usr/share/app/dist
+COPY --chown=nginx:nginx --from=test ${app_src_dir}/dist /usr/share/app/dist
