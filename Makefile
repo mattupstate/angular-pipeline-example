@@ -47,11 +47,12 @@ S3_ROOT_URI ?= s3://$(PUBLIC_ROOT_HOSTNAME)
 GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/allure/app/history/
 GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/allure/e2e/history/
 BUILD_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/builds/${GIT_COMMIT_SHA}/
-BUILD_REPORTS_S3_KEY_PREFIX ?= $(BUILD_S3_KEY_PREFIX)/reports/
+BUILD_REPORTS_S3_KEY_PREFIX ?= $(BUILD_S3_KEY_PREFIX)reports/
 RELEASE_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/releases/$(GIT_COMMIT_SHA)/
 TERRAFORM_DIR ?= etc/terraform
 E2E_COMPOSE_COMMAND ?= LOCAL_E2E_REPORTS_DIR=$(PWD)$(E2E_REPORTS_DIR) DOCKER_E2E_REPORTS_DIR=$(DOCKER_SRC_DIR)$(E2E_REPORTS_DIR) SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose
 SMOKE_COMPOSE_COMMAND ?= NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) $(E2E_COMPOSE_COMMAND)
+SENTRY_CLI_COMMAND ?= docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli
 
 .PHONY: test-image
 test-image:
@@ -148,9 +149,9 @@ e2e-debug:
 .PHONY: artifacts-deploy
 artifacts-deploy: dist-dir
 	docker run --rm $(ALL_DOCKER_ENV_SECRETS) $(TEST_IMAGE) /bin/bash -c 'aws s3 cp --acl private --recursive ./dist $(RELEASE_S3_KEY_PREFIX) && PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps' \
-		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases new -p angular-pipeline-example $(GIT_COMMIT_SHA) \
-		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases set-commits --auto $(GIT_COMMIT_SHA) \
-		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases set-commits --auto $(GIT_COMMIT_SHA)
+		&& $(SENTRY_CLI_COMMAND) releases new -p angular-pipeline-example $(GIT_COMMIT_SHA) \
+		&& $(SENTRY_CLI_COMMAND) releases set-commits --auto $(GIT_COMMIT_SHA) \
+		&& $(SENTRY_CLI_COMMAND) releases set-commits --auto $(GIT_COMMIT_SHA)
 	@echo "Artifacts deployed successfully"
 	@echo "S3 URI: $(RELEASE_S3_KEY_PREFIX)"
 	@echo "HTTP URI: $(PUBLIC_VERSIONED_URL)"
@@ -173,7 +174,7 @@ infra-deploy:
 	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
 		-v $(PWD):/work --workdir /work \
 		hashicorp/terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) $(TERRAFORM_DIR) \
-		&& docker run --rm $(ALL_DOCKER_ENV_SECRETS) -v $(PWD):/work getsentry/sentry-cli releases deploys $(GIT_COMMIT_SHA) new -e production \
+		&& $(SENTRY_CLI_COMMAND) releases deploys $(GIT_COMMIT_SHA) new -e production \
 		&& GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy succeeded \
 		|| GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy failed
 	@echo "Infrastructure deployed successfully"

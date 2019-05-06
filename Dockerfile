@@ -45,5 +45,6 @@ RUN npm run build-prod
 
 
 FROM nginx:1.14.2-alpine AS dist
+ARG app_src_dir
 COPY --chown=nginx:nginx etc/nginx/conf.d /etc/nginx/conf.d
 COPY --chown=nginx:nginx --from=test ${app_src_dir}/dist /usr/share/app/dist
