@@ -1,5 +1,5 @@
 steps:
-  - command: "make test-image-buildkite dist-image-buildkite"
+  - command: "make test-image dist-image"
     label: ":docker: Images"
   - wait
   - command: "make test"
