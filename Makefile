@@ -108,7 +108,7 @@ test:
 		-v $(PWD)$(APP_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
-	[[ "$(CI)" == "true" ]] && docker run --rm \
+	[[ "$(CI)" == "true" ]] && docker run --rm -u `id -u $$USER` \
 		-v $(PWD)$(APP_ALLURE_DIR):/usr/src/allure \
 			mattupstate/allure generate --clean --report-dir html xml || :
 	# Copy test reports to build artifact S3 repository
@@ -140,7 +140,7 @@ e2e:
 		-v $(PWD)$(E2E_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
-	docker run --rm \
+	[[ "$(CI)" == "true" ]] docker run --rm -u `id -u $$USER` \
 		-v $(PWD)$(E2E_ALLURE_DIR):/usr/src/allure \
 			mattupstate/allure generate --clean --report-dir html xml || :
 	# Copy test reports to build artifact S3 repository
@@ -160,8 +160,11 @@ e2e-debug:
 
 .PHONY: artifacts-deploy
 artifacts-deploy:
+	# Copy build artifacts from container to host
+	docker rm artifacts-$(DOCKER_BUILD_CHECKSUM) || :
 	docker create --name artifacts-$(DOCKER_BUILD_CHECKSUM) $(TEST_IMAGE)
 	docker cp artifacts-$(DOCKER_BUILD_CHECKSUM):$(DOCKER_SRC_DIR)/dist $(PWD)/
+	# Copy build artifacts to S3
 	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)/dist:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(RELEASE_S3_KEY_PREFIX)

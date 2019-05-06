@@ -9,6 +9,7 @@
 bin/cc-test-reporter
 bin/md5
 bin/rollbar-deploy
+bin/rollbar-sourcemaps
 dist
 docker-compose.yml
 Makefile
