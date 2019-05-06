@@ -87,7 +87,7 @@ analysis:
 	[[ "$(CI)" == "true" ]] && docker cp analysis-$(DOCKER_BUILD_CHECKSUM):$(DOCKER_SRC_DIR)$(APP_ANALYSIS_DIR) $(PWD)$(REPORTS_DIR)/ || :
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
-		mesosphere/aws-cli s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX) || :
+		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX) || :
 	# Cleanup
 	docker rm analysis-$(DOCKER_BUILD_CHECKSUM)
 
@@ -106,7 +106,7 @@ test:
 	# Fetch global Allure history from S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(APP_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
-		mesosphere/aws-cli s3 cp --recursive $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
+		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
 	[[ "$(CI)" == "true" ]] && docker run --rm \
 		-v $(PWD)$(APP_ALLURE_DIR):/usr/src/allure \
@@ -114,11 +114,11 @@ test:
 	# Copy test reports to build artifact S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
-		mesosphere/aws-cli s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX) || :
+		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX) || :
 	# Copy build Allure hisitory to global Allure history S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(APP_ALLURE_REPORT_HISTORY_DIR):/work --workdir /work \
-		mesosphere/aws-cli s3 cp --acl private --recursive /work $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) || :
+		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) || :
 	[[ "$(CI)" == "true" ]] && ./bin/cc-test-reporter format-coverage -o - -t lcov -p $(DOCKER_SRC_DIR) $(PWD)$(APP_COVERAGE_LCOV_FILE) | ./bin/cc-test-reporter upload-coverage -i - || :
 	# Cleanup
 	docker rm $(TEST_CONTAINER_NAME)
@@ -138,7 +138,7 @@ e2e:
 	# Fetch global Allure history from S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(E2E_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
-		mesosphere/aws-cli s3 cp --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
+		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
 	docker run --rm \
 		-v $(PWD)$(E2E_ALLURE_DIR):/usr/src/allure \
@@ -146,11 +146,11 @@ e2e:
 	# Copy test reports to build artifact S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(REPORTS_DIR):/work --workdir /work \
-		mesosphere/aws-cli s3 cp --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX)
+		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(BUILD_REPORTS_S3_KEY_PREFIX)
 	# Copy build Allure hisitory to global Allure history S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)$(E2E_ALLURE_REPORT_HISTORY_DIR):/work --workdir /work \
-		mesosphere/aws-cli s3 cp --acl private --recursive /work $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX)
+		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX)
 	# Cleanup
 	$(E2E_COMPOSE_COMMAND) down || :
 
@@ -163,7 +163,7 @@ artifacts-deploy:
 	docker run --rm -v $(PWD)/dist:/var/run/app/dist $(TEST_IMAGE) cp -r ./dist /var/run/app
 	docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
 		-v $(PWD)/dist:/work --workdir /work \
-		mesosphere/aws-cli s3 cp --acl private --recursive /work $(RELEASE_S3_KEY_PREFIX)
+		mesosphere/aws-cli s3 cp --quiet --acl private --recursive /work $(RELEASE_S3_KEY_PREFIX)
 	# Upload source maps to Rollbar
 	PUBLIC_ROOT_URL=$(PUBLIC_ROOT_URL) GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) ./bin/rollbar-sourcemaps'
 	# Notify Sentry of new release
