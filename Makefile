@@ -53,7 +53,7 @@ GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/allure/e2e/hist
 BUILD_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/builds/${GIT_COMMIT_SHA}/
 BUILD_REPORTS_S3_KEY_PREFIX ?= $(BUILD_S3_KEY_PREFIX)reports/
 RELEASE_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/releases/$(GIT_COMMIT_SHA)/
-TERRAFORM_DIR ?= etc/terraform
+TERRAFORM_DIR ?= /etc/terraform
 ROLLBAR_DEPLOY_COMMAND ?= GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) GIT_COMMIT_AUTHOR=$(GIT_COMMIT_AUTHOR) ./bin/rollbar-deploy
 E2E_COMPOSE_COMMAND ?= SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox TEST_IMAGE=$(TEST_IMAGE) DIST_IMAGE=$(DIST_IMAGE) docker-compose
 SMOKE_COMPOSE_COMMAND ?= NPM_SCRIPT=smoke-ci GIT_COMMIT_SHA=$(GIT_COMMIT_SHA) $(E2E_COMPOSE_COMMAND)
@@ -182,11 +182,11 @@ artifacts-deploy:
 .PHONY: infra-plan
 infra-plan:
 	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
-		-v $(PWD):/work --workdir /work \
-		hashicorp/terraform init $(TERRAFORM_DIR)
+		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
+		hashicorp/terraform init
 	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
-		-v $(PWD):/work --workdir /work \
-		hashicorp/terraform plan $(TERRAFORM_VAR_ARGS) $(TERRAFORM_DIR)
+		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
+		hashicorp/terraform plan $(TERRAFORM_VAR_ARGS)
 
 .PHONY: infra-deploy
 infra-deploy:
@@ -201,7 +201,7 @@ infra-deploy:
 		hashicorp/terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) \
 		&& $(SENTRY_CLI_COMMAND) releases deploys $(GIT_COMMIT_SHA) new -e production \
 		&& $(ROLLBAR_DEPLOY_COMMAND) succeeded \
-		|| $(ROLLBAR_DEPLOY_COMMAND) failed
+		|| $(ROLLBAR_DEPLOY_COMMAND) failed && exit 1
 	@echo "Infrastructure deployed successfully"
 	@echo "HTTP URI: $(PUBLIC_ROOT_URL)"
 
