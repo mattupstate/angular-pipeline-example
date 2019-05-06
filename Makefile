@@ -10,6 +10,7 @@ DOCKER_SRC_DIR ?= /usr/src/app
 DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,app_src_dir=$(DOCKER_SRC_DIR) git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
 IMAGE_BASE_NAME ?= mattupstate/$(PROJECT_NAME)
 DOCKER_BUILD_CHECKSUM ?= $(shell ./bin/md5 package-lock.json Dockerfile)
+APP_SRC_CHECKSUM ?= $(shell ./bin/md5 $$(find ./src -type f))
 TEST_IMAGE_TAG ?= test-$(DOCKER_BUILD_CHECKSUM)
 TEST_IMAGE ?= $(IMAGE_BASE_NAME):$(TEST_IMAGE_TAG)
 TEST_IMAGE_BUILD_TARGET ?= test
@@ -140,7 +141,7 @@ e2e:
 		-v $(PWD)$(E2E_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
-	[[ "$(CI)" == "true" ]] docker run --rm -u `id -u $$USER` \
+	[[ "$(CI)" == "true" ]] && docker run --rm -u `id -u $$USER` \
 		-v $(PWD)$(E2E_ALLURE_DIR):/usr/src/allure \
 			mattupstate/allure generate --clean --report-dir html xml || :
 	# Copy test reports to build artifact S3 repository
