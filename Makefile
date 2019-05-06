@@ -106,6 +106,7 @@ test:
 	[[ "$(CI)" == "true" ]] && docker cp $(TEST_CONTAINER_NAME):$(DOCKER_SRC_DIR)$(APP_REPORTS_DIR) $(PWD)$(REPORTS_DIR)/ || :
 	# Fetch global Allure history from S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-u `id -u $$USER` \
 		-v $(PWD)$(APP_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_APP_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
@@ -138,6 +139,7 @@ e2e:
 	[[ "$(CI)" == "true" ]] && docker cp `docker-compose ps -q protractor 2>/dev/null`:$(DOCKER_SRC_DIR)$(E2E_REPORTS_DIR) $(PWD)$(REPORTS_DIR)/ || :
 	# Fetch global Allure history from S3 repository
 	[[ "$(CI)" == "true" ]] && docker run --rm $(AWS_DOCKER_ENV_SECRETS) \
+		-u `id -u $$USER` \
 		-v $(PWD)$(E2E_ALLURE_RESULTS_DIR)/history:/work --workdir /work \
 		mesosphere/aws-cli s3 cp --quiet --recursive $(GLOBAL_E2E_ALLURE_REPORT_HISTORY_S3_KEY_PREFIX) /work || :
 	# Generate Allure report
@@ -181,10 +183,10 @@ artifacts-deploy:
 
 .PHONY: infra-plan
 infra-plan:
-	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) -u `id -u $$USER` \
 		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
 		hashicorp/terraform init
-	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) -u `id -u $$USER` \
 		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
 		hashicorp/terraform plan $(TERRAFORM_VAR_ARGS)
 
@@ -192,11 +194,11 @@ infra-plan:
 infra-deploy:
 	# Notify Rollbar that deployment has started
 	$(ROLLBAR_DEPLOY_COMMAND) started
-	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) -u `id -u $$USER` \
 		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
 		hashicorp/terraform init
 	# Apply infra changes and notify Rollbar and Sentry on success
-	docker run --rm $(ALL_DOCKER_ENV_SECRETS) \
+	docker run --rm $(ALL_DOCKER_ENV_SECRETS) -u `id -u $$USER` \
 		-v $(PWD)$(TERRAFORM_DIR):/work --workdir /work \
 		hashicorp/terraform apply -auto-approve $(TERRAFORM_VAR_ARGS) \
 		&& $(SENTRY_CLI_COMMAND) releases deploys $(GIT_COMMIT_SHA) new -e production \
