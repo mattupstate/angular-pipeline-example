@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+set -x
+
+TERRAFORM_DIR=etc/terraform
+
+docker run --rm \
+		--env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --env FASTLY_API_KEY \
+    --env DNSIMPLE_TOKEN \
+    --env DNSIMPLE_ACCOUNT \
+		--workdir /work \
+		--volume ${PWD}/${TERRAFORM_DIR}:/work/${TERRAFORM_DIR} \
+		--entrypoint /bin/sh \
+		hashicorp/terraform \
+			-c 'terraform init '${TERRAFORM_DIR}' && terraform plan -var target_version='${GIT_COMMIT_SHA}' '${TERRAFORM_DIR}

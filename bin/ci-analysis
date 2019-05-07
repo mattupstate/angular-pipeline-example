@@ -1,0 +1,65 @@
+#!/bin/bash
+
+if [[ -z ${TEST_IMAGE+x} ]]; then
+  echo 'TEST_IMAGE is not set'
+  exit 1
+fi
+
+if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
+  echo 'DOCKER_BUILD_CHECKSUM is not set'
+  exit 1
+fi
+
+if [[ -z ${BUILD_S3_KEY_PREFIX+x} ]]; then
+  echo 'BUILD_S3_KEY_PREFIX is not set'
+  exit 1
+fi
+
+set -x
+
+CONTAINER_NAME=analysis-${DOCKER_BUILD_CHECKSUM}
+
+pre-analysis() {
+  docker rm ${CONTAINER_NAME} 2>/dev/null || :
+}
+
+post-analysis() {
+  if [[ "${CI}" == "true" ]]; then
+    mkdir -p dirname ${PWD}/reports/app
+    docker cp ${CONTAINER_NAME}:/usr/src/app/reports/app/lint ${PWD}/reports/app/
+
+    mkdir -p dirname ${PWD}/reports/e2e
+    docker cp ${CONTAINER_NAME}:/usr/src/app/reports/e2e/lint ${PWD}/reports/e2e/
+
+    docker run --rm \
+      --env AWS_DEFAULT_REGION \
+      --env AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY \
+      --workdir /work \
+      --volume ${PWD}/reports/app/lint:/work \
+      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+        /work ${BUILD_S3_KEY_PREFIX}reports/app/lint/
+
+    docker run --rm \
+      --env AWS_DEFAULT_REGION \
+      --env AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY \
+      --workdir /work \
+      --volume ${PWD}/reports/e2e/lint:/work \
+      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+        /work ${BUILD_S3_KEY_PREFIX}reports/e2e/lint/
+  fi
+
+  # Cleanup
+  docker rm ${CONTAINER_NAME}
+}
+
+pre-analysis
+
+docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint
+
+ANALYSIS_EXIT_CODE=$?
+
+post-analysis
+
+exit ${ANALYSIS_EXIT_CODE}

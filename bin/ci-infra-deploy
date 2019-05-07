@@ -1,0 +1,35 @@
+#!/bin/bash
+
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+terraform-apply() {
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --env FASTLY_API_KEY \
+    --env DNSIMPLE_TOKEN \
+    --env DNSIMPLE_ACCOUNT \
+    --workdir /work \
+    --volume ${PWD}/etc/terraform:/work/etc/terraform \
+    --entrypoint /bin/sh \
+    hashicorp/terraform \
+    -c 'terraform init etc/terraform && terraform apply -auto-approve -var target_version=${GIT_COMMIT_SHA} etc/terraform'
+}
+
+on-terraform-apply() {
+  docker run --rm \
+    --env SENTRY_AUTH_TOKEN \
+    --env SENTRY_ORG \
+    --volume ${PWD}:/work \
+    getsentry/sentry-cli releases deploys ${GIT_COMMIT_SHA} new -e production
+}
+
+on-terraform-apply-error() {
+  exit 1
+}
+
+terraform-apply && on-terraform-apply || on-terraform-apply-error

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+if [[ -z ${TEST_IMAGE+x} ]]; then
+  echo 'TEST_IMAGE is not set'
+  exit 1
+fi
+
+if [[ -z ${RELEASE_S3_KEY_PREFIX+x} ]]; then
+  echo 'RELEASE_S3_KEY_PREFIX is not set'
+  exit 1
+fi
+
+sentry-release() {
+  docker run --rm \
+    --env SENTRY_AUTH_TOKEN \
+    --env SENTRY_ORG \
+    --volume ${PWD}:/work \
+    getsentry/sentry-cli releases new -p angular-pipeline-example ${GIT_COMMIT_SHA}
+
+  docker run --rm \
+    --env SENTRY_AUTH_TOKEN \
+    --env SENTRY_ORG \
+    --volume ${PWD}:/work \
+    getsentry/sentry-cli releases set-commits --auto ${GIT_COMMIT_SHA}
+
+  docker run --rm \
+    --env SENTRY_AUTH_TOKEN \
+    --env SENTRY_ORG \
+    --volume ${PWD}:/work \
+    getsentry/sentry-cli releases finalize ${GIT_COMMIT_SHA}
+}
+
+dist-cp() {
+  docker rm artifacts-${GIT_COMMIT_SHA} || :
+  docker create --name artifacts-${GIT_COMMIT_SHA} ${TEST_IMAGE}
+  docker cp artifacts-${GIT_COMMIT_SHA}:/usr/src/app/dist ${PWD}/
+  docker rm artifacts-${GIT_COMMIT_SHA} || :
+}
+
+s3-cp() {
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${PWD}/dist:/work \
+    mesosphere/aws-cli \
+      s3 cp --quiet --acl private --recursive /work ${RELEASE_S3_KEY_PREFIX}
+}
+
+on-error() {
+  exit 1
+}
+
+dist-cp && s3-cp && sentry-release || on-error

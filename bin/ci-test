@@ -1,0 +1,103 @@
+#!/bin/bash
+
+if [[ -z ${TEST_IMAGE+x} ]]; then
+  echo 'TEST_IMAGE is not set'
+  exit 1
+fi
+
+if [[ -z ${TEST_CONTAINER_NAME+x} ]]; then
+  echo 'TEST_CONTAINER_NAME is not set'
+  exit 1
+fi
+
+if [[ "${CI}" == "true" ]]; then
+  if [[ -z ${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX+x} ]]; then
+    echo 'GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX must be set when CI=true'
+    exit 1
+  fi
+
+  if [[ -z ${BUILD_REPORTS_S3_KEY_PREFIX+x} ]]; then
+    echo 'BUILD_REPORTS_S3_KEY_PREFIX must be set when CI=true'
+    exit 1
+  fi
+fi
+
+set -x
+
+LOCAL_APP_ALLURE_DIR=${PWD}/reports/app/allure
+GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX=${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX%/}/app/
+
+pre-test() {
+  docker rm ${TEST_CONTAINER_NAME} 2>/dev/null || :
+
+  [[ "${CI}" == "true" ]] && ./bin/cc-test-reporter before-build || :
+}
+
+post-test() {
+  if [[ "${CI}" == "true" ]]; then
+    # Copy the reports from the container to the host
+    mkdir ${PWD}/reports || :
+    docker cp ${TEST_CONTAINER_NAME}:/usr/src/app/reports/app ${PWD}/reports/ || :
+
+    # Fetch global Allure history from S3 repository
+    docker run --rm \
+      --env AWS_DEFAULT_REGION \
+      --env AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY \
+      --user $(id -u $USER) \
+      --workdir /work \
+      --volume ${LOCAL_APP_ALLURE_DIR}/xml/history:/work \
+      mesosphere/aws-cli s3 cp --quiet --recursive \
+        ${GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX} /work || :
+
+    # Generate Allure report
+    docker run --rm \
+      --user $(id -u $USER) \
+      --volume ${PWD}/reports/app/allure:/usr/src/allure \
+      mattupstate/allure generate --clean \
+        --report-dir html xml || :
+
+    # Copy test reports to build artifact S3 repository
+    docker run --rm \
+      --env AWS_DEFAULT_REGION \
+      --env AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY \
+      --workdir /work \
+      --volume ${PWD}/reports:/work \
+      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+        /work ${BUILD_REPORTS_S3_KEY_PREFIX} || :
+
+    # Copy build Allure hisitory to global Allure history S3 repository
+    docker run --rm \
+      --env AWS_DEFAULT_REGION \
+      --env AWS_ACCESS_KEY_ID \
+      --env AWS_SECRET_ACCESS_KEY \
+      --workdir /work \
+      --volume ${LOCAL_APP_ALLURE_DIR}/html/history:/work \
+      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+        /work ${GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX} || :
+
+    ./bin/cc-test-reporter format-coverage \
+      -o - -t lcov -p /usr/src/app/ \
+      ${PWD}/reports/app/coverage/lcov.info \
+        | ./bin/cc-test-reporter upload-coverage -i - || :
+  fi
+
+  # Cleanup
+  docker rm ${TEST_CONTAINER_NAME}
+}
+
+pre-test
+
+docker run --name ${TEST_CONTAINER_NAME} \
+  --env ALLURE_RESULTS_DIR=/usr/src/app/reports/app/allure/xml \
+  --env COVERAGE_REPORT_DIR=/usr/src/app/reports/app/coverage \
+  --security-opt seccomp=${PWD}/etc/docker/seccomp/chrome.json \
+  ${TEST_IMAGE} \
+  npm run test-ci
+
+TEST_EXIT_CODE=$?
+
+post-test
+
+exit $TEST_EXIT_CODE

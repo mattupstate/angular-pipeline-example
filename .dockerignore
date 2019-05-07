@@ -7,9 +7,8 @@
 .semaphore
 .terraform
 bin/cc-test-reporter
+bin/ci-*
 bin/md5
-bin/rollbar-deploy
-bin/rollbar-sourcemaps
 dist
 docker-compose.yml
 Makefile
