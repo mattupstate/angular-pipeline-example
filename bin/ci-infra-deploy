@@ -5,6 +5,10 @@ if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
   exit 1
 fi
 
+set -x
+
+TERRAFORM_DIR=etc/terraform
+
 terraform-apply() {
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -14,10 +18,10 @@ terraform-apply() {
     --env DNSIMPLE_TOKEN \
     --env DNSIMPLE_ACCOUNT \
     --workdir /work \
-    --volume ${PWD}/etc/terraform:/work/etc/terraform \
+    --volume ${PWD}/${TERRAFORM_DIR}:/work/${TERRAFORM_DIR} \
     --entrypoint /bin/sh \
     hashicorp/terraform \
-    -c 'terraform init etc/terraform && terraform apply -auto-approve -var target_version=${GIT_COMMIT_SHA} etc/terraform'
+      -c 'terraform init '${TERRAFORM_DIR}' && terraform apply -auto-approve -var target_version='${GIT_COMMIT_SHA}' '${TERRAFORM_DIR}
 }
 
 on-terraform-apply() {

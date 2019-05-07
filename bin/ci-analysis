@@ -37,8 +37,8 @@ post-analysis() {
       --env AWS_SECRET_ACCESS_KEY \
       --workdir /work \
       --volume ${PWD}/reports/app/lint:/work \
-      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX}reports/app/lint/
+      mesosphere/aws-cli s3 cp --acl private --recursive \
+        /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
 
     docker run --rm \
       --env AWS_DEFAULT_REGION \
@@ -46,8 +46,8 @@ post-analysis() {
       --env AWS_SECRET_ACCESS_KEY \
       --workdir /work \
       --volume ${PWD}/reports/e2e/lint:/work \
-      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX}reports/e2e/lint/
+      mesosphere/aws-cli s3 cp --acl private --recursive \
+        /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
   fi
 
   # Cleanup
@@ -56,7 +56,7 @@ post-analysis() {
 
 pre-analysis
 
-docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint
+docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint-ci
 
 ANALYSIS_EXIT_CODE=$?
 

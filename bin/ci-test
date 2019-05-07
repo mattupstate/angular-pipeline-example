@@ -50,7 +50,7 @@ post-test() {
       --user $(id -u $USER) \
       --workdir /work \
       --volume ${LOCAL_APP_ALLURE_DIR}/xml/history:/work \
-      mesosphere/aws-cli s3 cp --quiet --recursive \
+      mesosphere/aws-cli s3 cp --recursive \
         ${GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX} /work || :
 
     # Generate Allure report
@@ -66,9 +66,9 @@ post-test() {
       --env AWS_ACCESS_KEY_ID \
       --env AWS_SECRET_ACCESS_KEY \
       --workdir /work \
-      --volume ${PWD}/reports/app:/work \
-      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX%/}/reports/app || :
+      --volume ${LOCAL_APP_ALLURE_DIR}:/work \
+      mesosphere/aws-cli s3 cp --acl private --recursive \
+        /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/allure || :
 
     # Copy build Allure hisitory to global Allure history S3 repository
     docker run --rm \
@@ -77,7 +77,7 @@ post-test() {
       --env AWS_SECRET_ACCESS_KEY \
       --workdir /work \
       --volume ${LOCAL_APP_ALLURE_DIR}/html/history:/work \
-      mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+      mesosphere/aws-cli s3 cp --acl private --recursive \
         /work ${GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX} || :
 
     ./bin/cc-test-reporter format-coverage \

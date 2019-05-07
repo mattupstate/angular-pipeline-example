@@ -15,6 +15,8 @@ if [[ -z ${RELEASE_S3_KEY_PREFIX+x} ]]; then
   exit 1
 fi
 
+set -x
+
 sentry-release() {
   docker run --rm \
     --env SENTRY_AUTH_TOKEN \
@@ -50,7 +52,7 @@ s3-cp() {
     --workdir /work \
     --volume ${PWD}/dist:/work \
     mesosphere/aws-cli \
-      s3 cp --quiet --acl private --recursive /work ${RELEASE_S3_KEY_PREFIX}
+      s3 cp --acl private --recursive /work ${RELEASE_S3_KEY_PREFIX}
 }
 
 on-error() {
