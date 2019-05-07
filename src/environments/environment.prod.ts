@@ -10,20 +10,6 @@ export const environment = {
       }
     }
   },
-  rollbar: {
-    enabled: true,
-    accessToken: 'bcbcced242ca43a9b9e8c3cbce7f32d4',
-    captureUncaught: true,
-    captureUnhandledRejections: true,
-    payload: {
-      environment: 'production',
-      client: {
-        javascript: {
-          code_version: BuildInfo.gitCommitHash
-        }
-      }
-    }
-  },
   sentry: {
     enabled: true,
     environment: 'production',

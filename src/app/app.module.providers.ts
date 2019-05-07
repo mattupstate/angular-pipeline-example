@@ -4,8 +4,6 @@ import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
 import { BuildInfo } from '../environments/build-info';
 import { environment } from '../environments/environment';
-import { Rollbar } from './errors/rollbar.service';
-import { RollbarErrorHandler   } from './errors/rollbar-error-handler';
 import { SentryErrorHandler } from './errors/sentry-error-handler';
 import { MultiErrorHandler } from './errors/multi-error-handler';
 
@@ -31,7 +29,6 @@ const segmentAnalyticsFactory = (localeId: string) => {
 
 const multiErrorHandlerFactory = () => {
   return new MultiErrorHandler([
-    new RollbarErrorHandler(new Rollbar(environment.rollbar)),
     new SentryErrorHandler(environment.sentry)
   ]);
 };
