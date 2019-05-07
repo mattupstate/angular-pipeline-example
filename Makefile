@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-CI_SCRIPTS = $(subst ci-,,$(shell find ./bin/ci-* -type f -exec basename {} +))
+CI_SCRIPTS = $(subst ./bin/ci-,,$(shell find ./bin/ci-* -type f))
 export CI ?= false
 export PROJECT_NAME ?= $(shell jq -r '.name' package.json)
 export GIT_COMMIT_SHA ?= $(shell git rev-parse --verify HEAD)
