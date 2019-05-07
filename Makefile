@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+CI_SCRIPTS = $(subst ci-,,$(shell find ./bin/ci-* -type f -exec basename {} +))
 export CI ?= false
 export PROJECT_NAME ?= $(shell jq -r '.name' package.json)
 export GIT_COMMIT_SHA ?= $(shell git rev-parse --verify HEAD)
@@ -34,46 +35,12 @@ test-image-push:
 dist-image-push:
 	docker push $(DIST_IMAGE)
 
-.PHONY: audit
-audit:
-	docker run --rm $(TEST_IMAGE) npm run audit-ci
-
-.PHONY: analysis
-analysis:
-	./bin/ci-analysis
-
-.PHONY: test
-test:
-	./bin/ci-test
-
-.PHONY: smoke-test
-smoke-test:
-	./bin/ci-smoke
-
-.PHONY: e2e
-e2e:
-	./bin/ci-e2e
+.PHONY: $(CI_SCRIPTS)
+$(CI_SCRIPTS):
+	./bin/ci-$(@)
 
 .PHONY: e2e-debug
 e2e-debug:
 	SELENIUM_CHROME_IMAGE=node-chrome-debug \
 	SELENIUM_FIREFOX_IMAGE=node-firefox-debug \
 		docker-compose up chrome firefox webapp
-
-.PHONY: artifacts-deploy
-artifacts-deploy:
-	./bin/ci-artifacts-deploy
-	@echo "Artifacts deployed successfully"
-	@echo "S3 URI: $(RELEASE_S3_KEY_PREFIX)"
-	@echo "HTTP URI: $(PUBLIC_VERSIONED_ROOT_URL)"
-
-.PHONY: infra-plan
-infra-plan:
-	./bin/ci-infra-plan
-
-.PHONY: infra-deploy
-infra-deploy:
-	./bin/ci-infra-deploy
-	@echo "Infrastructure deployed successfully"
-	@echo "HTTP URI: $(PUBLIC_ROOT_URL)"
-
