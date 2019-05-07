@@ -38,12 +38,15 @@ pre-e2e() {
 post-e2e() {
   # Copy the reports from the container to the host
   if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
-    mkdir -p dirname ${PWD}/reports/e2e || :
+    mkdir -p ${PWD}/reports
 
     # Copy the reports from the container to the host
     docker cp \
       $(docker-compose ps -q protractor 2>/dev/null):/usr/src/app/reports/e2e \
       ${PWD}/reports/
+
+    mkdir ${LOCAL_E2E_ALLURE_DIR}/html
+    mkdir ${LOCAL_E2E_ALLURE_DIR}/xml/history
 
     # Fetch global Allure history from S3 repository
     docker run --rm \
@@ -59,7 +62,8 @@ post-e2e() {
     # Generate Allure report
     docker run --rm \
       --user $(id -u $USER) \
-      --volume ${LOCAL_E2E_ALLURE_DIR}:/usr/src/allure \
+      --volume ${LOCAL_E2E_ALLURE_DIR}/html:/usr/src/allure/html \
+      --volume ${LOCAL_E2E_ALLURE_DIR}/xml:/usr/src/allure/xml \
       mattupstate/allure generate --clean --report-dir html xml
 
     # Copy test reports to build artifact S3 repository
@@ -68,9 +72,9 @@ post-e2e() {
       --env AWS_ACCESS_KEY_ID \
       --env AWS_SECRET_ACCESS_KEY \
       --workdir /work \
-      --volume ${LOCAL_E2E_REPORTS_DIR}:/work \
+      --volume ${LOCAL_E2E_ALLURE_DIR}:/work \
       mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/
+        /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/allure/
 
     # Copy build Allure hisitory to global Allure history S3 repository
     docker run --rm \

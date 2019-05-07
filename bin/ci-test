@@ -61,8 +61,7 @@ post-test() {
       --user $(id -u $USER) \
       --volume ${LOCAL_APP_ALLURE_DIR}/html:/usr/src/allure/html \
       --volume ${LOCAL_APP_ALLURE_DIR}/xml:/usr/src/allure/xml \
-      mattupstate/allure generate --clean \
-        --report-dir html xml
+      mattupstate/allure generate --clean --report-dir html xml
 
     # Copy test reports to build artifact S3 repository
     docker run --rm \
