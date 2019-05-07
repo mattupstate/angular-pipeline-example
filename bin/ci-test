@@ -16,8 +16,8 @@ if [[ "${CI}" == "true" ]]; then
     exit 1
   fi
 
-  if [[ -z ${BUILD_REPORTS_S3_KEY_PREFIX+x} ]]; then
-    echo 'BUILD_REPORTS_S3_KEY_PREFIX must be set when CI=true'
+  if [[ -z ${BUILD_S3_KEY_PREFIX+x} ]]; then
+    echo 'BUILD_S3_KEY_PREFIX must be set when CI=true'
     exit 1
   fi
 fi
@@ -56,7 +56,7 @@ post-test() {
     # Generate Allure report
     docker run --rm \
       --user $(id -u $USER) \
-      --volume ${PWD}/reports/app/allure:/usr/src/allure \
+      --volume ${LOCAL_APP_ALLURE_DIR}:/usr/src/allure \
       mattupstate/allure generate --clean \
         --report-dir html xml || :
 
@@ -66,9 +66,9 @@ post-test() {
       --env AWS_ACCESS_KEY_ID \
       --env AWS_SECRET_ACCESS_KEY \
       --workdir /work \
-      --volume ${PWD}/reports:/work \
+      --volume ${PWD}/reports/app:/work \
       mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
-        /work ${BUILD_REPORTS_S3_KEY_PREFIX} || :
+        /work ${BUILD_S3_KEY_PREFIX%/}/reports/app || :
 
     # Copy build Allure hisitory to global Allure history S3 repository
     docker run --rm \
