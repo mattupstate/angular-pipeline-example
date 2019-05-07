@@ -28,8 +28,8 @@ LOCAL_E2E_REPORTS_DIR=${PWD}/reports/e2e
 LOCAL_E2E_ALLURE_DIR=${LOCAL_E2E_REPORTS_DIR}/allure
 GLOBAL_E2E_ALLURE_HISTORY_KEY_PREFIX=${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX%/}/e2e/
 
-SELENIUM_CHROME_IMAGE=node-chrome
-SELENIUM_FIREFOX_IMAGE=node-firefox
+export SELENIUM_CHROME_IMAGE=node-chrome
+export SELENIUM_FIREFOX_IMAGE=node-firefox
 
 pre-e2e() {
   docker-compose down || :
@@ -37,7 +37,7 @@ pre-e2e() {
 
 post-e2e() {
   # Copy the reports from the container to the host
-  if [[ "${CI}" == "true" ]]; then
+  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
     mkdir -p dirname ${PWD}/reports/e2e || :
 
     # Copy the reports from the container to the host

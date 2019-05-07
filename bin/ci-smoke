@@ -10,9 +10,9 @@ if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
   exit 1
 fi
 
-NPM_SCRIPT=smoke-ci
-SELENIUM_CHROME_IMAGE=node-chrome
-SELENIUM_FIREFOX_IMAGE=node-firefox
+export NPM_SCRIPT=smoke-ci
+export SELENIUM_CHROME_IMAGE=node-chrome
+export SELENIUM_FIREFOX_IMAGE=node-firefox
 
 docker-compose down || :
 

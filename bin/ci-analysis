@@ -24,7 +24,7 @@ pre-analysis() {
 }
 
 post-analysis() {
-  if [[ "${CI}" == "true" ]]; then
+  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
     mkdir -p dirname ${PWD}/reports/app
     docker cp ${CONTAINER_NAME}:/usr/src/app/reports/app/lint ${PWD}/reports/app/
 

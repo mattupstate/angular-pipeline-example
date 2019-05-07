@@ -5,8 +5,8 @@ if [[ -z ${TEST_IMAGE+x} ]]; then
   exit 1
 fi
 
-if [[ -z ${TEST_CONTAINER_NAME+x} ]]; then
-  echo 'TEST_CONTAINER_NAME is not set'
+if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
+  echo 'DOCKER_BUILD_CHECKSUM is not set'
   exit 1
 fi
 
@@ -24,17 +24,20 @@ fi
 
 set -x
 
+CONTAINER_NAME=test-${DOCKER_BUILD_CHECKSUM}
 LOCAL_APP_ALLURE_DIR=${PWD}/reports/app/allure
 GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX=${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX%/}/app/
 
 pre-test() {
   docker rm ${TEST_CONTAINER_NAME} 2>/dev/null || :
 
-  [[ "${CI}" == "true" ]] && ./bin/cc-test-reporter before-build || :
+  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
+    ./bin/cc-test-reporter before-build || :
+  fi
 }
 
 post-test() {
-  if [[ "${CI}" == "true" ]]; then
+  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
     # Copy the reports from the container to the host
     mkdir ${PWD}/reports || :
     docker cp ${TEST_CONTAINER_NAME}:/usr/src/app/reports/app ${PWD}/reports/ || :
