@@ -21,7 +21,8 @@ docker-compose up \
   --exit-code-from protractor \
   --force-recreate \
   --remove-orphans \
-  --quiet-pull
+  --quiet-pull \
+  hub firefox chrome protractor
 
 SMOKE_EXIT_CODE=$?
 
