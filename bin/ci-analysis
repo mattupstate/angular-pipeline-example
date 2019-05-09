@@ -10,7 +10,7 @@ if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
   exit 1
 fi
 
-if [[ -z "${CI}" == "true" ]]; then
+if [[ "${CI}" == "true" ]]; then
   if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
     echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
     exit 1
@@ -24,6 +24,14 @@ fi
 
 REPORTS_VOLUME=reports-${DOCKER_BUILD_CHECKSUM}
 CONTAINER_NAME=analysis-${DOCKER_BUILD_CHECKSUM}
+
+is-ci-context() {
+  [[ "${CI}" == "true" ]]
+}
+
+is-master-branch() {
+  [[ "${GIT_BRANCH}" == "master" ]]
+}
 
 clean() {
   docker rm ${CONTAINER_NAME} 2>/dev/null >/dev/null || :
