@@ -5,7 +5,7 @@
 .gitignore
 .editorconfig
 .semaphore
-.terraform
+**/.terraform
 bin/cc-test-reporter
 bin/ci-*
 bin/md5

@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+if [[ -z ${GIT_BRANCH+x} ]]; then
+  echo 'GIT_BRANCH is not set'
+  exit 1
+fi
+
 if [[ -z ${TEST_IMAGE+x} ]]; then
   echo 'TEST_IMAGE is not set'
   exit 1
@@ -11,8 +21,8 @@ if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
 fi
 
 if [[ "${CI}" == "true" ]]; then
-  if [[ -z ${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX+x} ]]; then
-    echo 'GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX must be set when CI=true'
+  if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
+    echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
     exit 1
   fi
 
@@ -22,88 +32,124 @@ if [[ "${CI}" == "true" ]]; then
   fi
 fi
 
-set -x
+REPORTS_VOLUME=reports-${DOCKER_BUILD_CHECKSUM}
+CONTAINER_NAME=test-${DOCKER_BUILD_CHECKSUM}
+CONTAINER_SRC_DIR=/usr/src/app
+CONTAINER_REPORTS_ROOT_DIR=${CONTAINER_SRC_DIR}/reports
+BUILD_REPORTS_S3_KEY_PREFIX=${BUILD_S3_KEY_PREFIX%/}/reports/app/
+MASTER_REPORTS_S3_KEY_PREFIX=${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/
+MASTER_ALLURE_HISTORY_S3_KEY_PREFIX=${MASTER_REPORTS_S3_KEY_PREFIX%/}/allure/html/history/
 
-TEST_CONTAINER_NAME=test-${DOCKER_BUILD_CHECKSUM}
-LOCAL_APP_ALLURE_DIR=${PWD}/reports/app/allure
-GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX=${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX%/}/app/
+is-ci-context() {
+  [[ "${CI}" == "true" ]]
+}
 
-pre-test() {
-  docker rm ${TEST_CONTAINER_NAME} 2>/dev/null || :
+is-master-branch() {
+  [[ "${GIT_BRANCH}" == "master" ]]
+}
 
-  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
-    ./bin/cc-test-reporter before-build
+clean() {
+  docker rm ${CONTAINER_NAME} 2>/dev/null >/dev/null || :
+  docker volume rm ${REPORTS_VOLUME} 2>/dev/null >/dev/null || :
+}
+
+generate-allure-report() {
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work \
+    mesosphere/aws-cli s3 cp --quiet --recursive \
+      ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX} /work/app/allure/xml/history/
+
+  export ALLURE_ENVIRONMENT="Hostname=$(hostname)
+Git.Commit=${GIT_COMMIT_SHA}
+Git.Branch=${GIT_BRANCH}
+Docker.Version=$(docker --version)
+Docker.TestImage=${TEST_IMAGE}"
+
+  docker run --rm \
+    --env ALLURE_ENVIRONMENT \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work \
+    --entrypoint /bin/sh \
+    mattupstate/allure -c '
+      echo "$ALLURE_ENVIRONMENT" >> app/allure/xml/environment.properties &&
+      cat app/allure/xml/environment.properties &&
+      allure generate --clean --report-dir app/allure/html app/allure/xml'
+}
+
+publish-reports() {
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work \
+    mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+      /work/app/ ${BUILD_REPORTS_S3_KEY_PREFIX}
+
+  if [[ "${GIT_BRANCH}" == "master" ]]; then
+    docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work \
+    mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+      /work/app/ ${MASTER_REPORTS_S3_KEY_PREFIX}
   fi
 }
 
-post-test() {
-  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
-    # Copy the reports from the container to the host
-    mkdir ${PWD}/reports
-    docker cp ${TEST_CONTAINER_NAME}:/usr/src/app/reports/app ${PWD}/reports/
-
-    mkdir ${LOCAL_APP_ALLURE_DIR}/html
-    mkdir ${LOCAL_APP_ALLURE_DIR}/xml/history
-    # Fetch global Allure history from S3 repository
-
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --user $(id -u $USER) \
-      --workdir /work \
-      --volume ${LOCAL_APP_ALLURE_DIR}/xml/history:/work \
-      mesosphere/aws-cli s3 cp --recursive \
-        ${GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX} /work
-
-    # Generate Allure report
-    docker run --rm \
-      --user $(id -u $USER) \
-      --volume ${LOCAL_APP_ALLURE_DIR}/html:/usr/src/allure/html \
-      --volume ${LOCAL_APP_ALLURE_DIR}/xml:/usr/src/allure/xml \
-      mattupstate/allure generate --clean --report-dir html xml
-
-    # Copy test reports to build artifact S3 repository
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --workdir /work \
-      --volume ${LOCAL_APP_ALLURE_DIR}:/work \
-      mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/allure
-
-    # Copy build Allure hisitory to global Allure history S3 repository
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --workdir /work \
-      --volume ${LOCAL_APP_ALLURE_DIR}/html/history:/work \
-      mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${GLOBAL_APP_ALLURE_HISTORY_KEY_PREFIX}
-
-    ./bin/cc-test-reporter format-coverage \
-      -o - -t lcov -p /usr/src/app/ \
-      ${PWD}/reports/app/coverage/lcov.info \
-        | ./bin/cc-test-reporter upload-coverage -i - || :
-  fi
-
-  # Cleanup
-  docker rm ${TEST_CONTAINER_NAME}
+code-climate-start() {
+  docker run --rm \
+    --env CC_TEST_REPORTER_ID \
+    --env GIT_COMMIT_SHA \
+    --env GIT_BRANCH \
+    --env GIT_COMMITED_AT \
+    cloudbuilders/cc-test-reporter before-build
 }
 
-pre-test
+code-climate-end() {
+  docker run --rm \
+    --env CC_TEST_REPORTER_ID \
+    --env GIT_COMMIT_SHA \
+    --env GIT_BRANCH \
+    --env GIT_COMMITED_AT \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work/reports \
+    --volume ${PWD}:/work \
+    --entrypoint /bin/sh \
+    cloudbuilders/cc-test-reporter -c '
+     cc-test-reporter format-coverage -o - -t lcov -p '${CONTAINER_SRC_DIR}'/ reports/app/coverage/lcov.info \
+        | cc-test-reporter upload-coverage -i -'
+}
 
-docker run --name ${TEST_CONTAINER_NAME} \
-  --env ALLURE_RESULTS_DIR=/usr/src/app/reports/app/allure/xml \
-  --env COVERAGE_REPORT_DIR=/usr/src/app/reports/app/coverage \
-  --security-opt seccomp=${PWD}/etc/docker/seccomp/chrome.json \
-  ${TEST_IMAGE} \
-  npm run test-ci
+do-reports() {
+  is-ci-context && is-master-branch \
+    && generate-allure-report && publish-reports || :
+}
 
+do-tests() {
+  docker volume create ${REPORTS_VOLUME} > /dev/null
+
+  is-ci-context && is-master-branch && code-climate-start || :
+
+  docker run --name ${CONTAINER_NAME} \
+    --volume ${REPORTS_VOLUME}:${CONTAINER_REPORTS_ROOT_DIR} \
+    --env ALLURE_RESULTS_DIR=${CONTAINER_REPORTS_ROOT_DIR}/app/allure/xml \
+    --env COVERAGE_REPORT_DIR=${CONTAINER_REPORTS_ROOT_DIR}/app/coverage \
+    --security-opt seccomp=${PWD}/etc/docker/seccomp/chrome.json \
+    ${TEST_IMAGE} \
+    npm run test-ci
+
+  is-ci-context && is-master-branch && code-climate-end || :
+}
+
+do-tests
 TEST_EXIT_CODE=$?
-
-post-test
+do-reports
+clean
 
 exit $TEST_EXIT_CODE

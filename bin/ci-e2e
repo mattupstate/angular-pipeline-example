@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+if [[ -z ${GIT_BRANCH+x} ]]; then
+  echo 'GIT_BRANCH is not set'
+  exit 1
+fi
+
 if [[ -z ${TEST_IMAGE+x} ]]; then
   echo 'TEST_IMAGE is not set'
   exit 1
@@ -22,86 +32,69 @@ if [[ "${CI}" == "true" ]]; then
   fi
 fi
 
-set -x
-
-LOCAL_E2E_REPORTS_DIR=${PWD}/reports/e2e
-LOCAL_E2E_ALLURE_DIR=${LOCAL_E2E_REPORTS_DIR}/allure
-GLOBAL_E2E_ALLURE_HISTORY_KEY_PREFIX=${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX%/}/e2e/
-
 export SELENIUM_CHROME_IMAGE=node-chrome
 export SELENIUM_FIREFOX_IMAGE=node-firefox
 
-pre-e2e() {
+CONTAINER_NAME=test-${DOCKER_BUILD_CHECKSUM}
+CONTAINER_REPORTS_ROOT_DIR=${CONTAINER_SRC_DIR}/reports
+BUILD_REPORTS_S3_KEY_PREFIX=${BUILD_S3_KEY_PREFIX%/}/reports/e2e/
+MASTER_REPORTS_S3_KEY_PREFIX=${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/
+MASTER_ALLURE_HISTORY_S3_KEY_PREFIX=${MASTER_REPORTS_S3_KEY_PREFIX%/}/allure/html/history/
+
+is-ci-context() {
+  [[ "${CI}" == "true" ]]
+}
+
+is-master-branch() {
+  [[ "${GIT_BRANCH}" == "master" ]]
+}
+
+clean() {
   docker-compose down || :
 }
 
-post-e2e() {
-  # Copy the reports from the container to the host
-  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
-    mkdir -p ${PWD}/reports
+generate-allure-report() {
+  export ALLURE_ENVIRONMENT="Hostname=$(hostname)
+Git.Commit=${GIT_COMMIT_SHA}
+Git.Branch=${GIT_BRANCH}
+Docker.Version=$(docker --version)
+Docker.TestImage=${TEST_IMAGE}
+DockerCompose.Version=$(docker-compose --version)"
 
-    # Copy the reports from the container to the host
-    docker cp \
-      $(docker-compose ps -q protractor 2>/dev/null):/usr/src/app/reports/e2e \
-      ${PWD}/reports/
-
-    mkdir ${LOCAL_E2E_ALLURE_DIR}/html
-    mkdir ${LOCAL_E2E_ALLURE_DIR}/xml/history
-
-    # Fetch global Allure history from S3 repository
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --user $(id -u $USER) \
-      --workdir /work \
-      --volume ${LOCAL_E2E_ALLURE_DIR}/xml/history:/work \
-      mesosphere/aws-cli s3 cp --recursive \
-        ${GLOBAL_E2E_ALLURE_HISTORY_KEY_PREFIX} /work
-
-    # Generate Allure report
-    docker run --rm \
-      --user $(id -u $USER) \
-      --volume ${LOCAL_E2E_ALLURE_DIR}/html:/usr/src/allure/html \
-      --volume ${LOCAL_E2E_ALLURE_DIR}/xml:/usr/src/allure/xml \
-      mattupstate/allure generate --clean --report-dir html xml
-
-    # Copy test reports to build artifact S3 repository
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --workdir /work \
-      --volume ${LOCAL_E2E_ALLURE_DIR}:/work \
-      mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/allure/
-
-    # Copy build Allure hisitory to global Allure history S3 repository
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --workdir /work \
-      --volume ${LOCAL_E2E_ALLURE_DIR}/html/history:/work \
-      mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${GLOBAL_E2E_ALLURE_HISTORY_KEY_PREFIX}
-  fi
-
-  # Cleanup
-  docker-compose down
+  docker-compose run --rm --entrypoint /bin/sh allure -c '
+    echo "$ALLURE_ENVIRONMENT" >> e2e/allure/xml/environment.properties &&
+    cat e2e/allure/xml/environment.properties &&
+    allure generate --clean --report-dir e2e/allure/html e2e/allure/xml'
 }
 
-pre-e2e
+publish-reports() {
+  docker-compose run --rm aws \
+    s3 cp --quiet --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
 
-docker-compose up \
-  --abort-on-container-exit \
-  --exit-code-from protractor \
-  --force-recreate \
-  --remove-orphans \
-  --quiet-pull
+  if [[ "${GIT_BRANCH}" == "master" ]]; then
+    docker-compose run --rm aws \
+      s3 cp --quiet --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
+  fi
+}
 
+do-reports() {
+  is-ci-context && is-master-branch \
+    && generate-allure-report && publish-reports || :
+}
+
+do-tests() {
+  docker-compose up \
+    --abort-on-container-exit \
+    --exit-code-from protractor \
+    --force-recreate \
+    --remove-orphans \
+    --quiet-pull \
+    hub firefox chrome webapp protractor
+}
+
+do-tests
 E2E_EXIT_CODE=$?
-
-post-e2e
+do-reports
+clean
 
 exit ${E2E_EXIT_CODE}

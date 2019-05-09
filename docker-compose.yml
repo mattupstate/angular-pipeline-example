@@ -29,6 +29,12 @@ services:
   webapp:
     image: ${DIST_IMAGE}
 
+  npm:
+    image: ${TEST_IMAGE}
+    entrypoint: npm
+    volumes:
+      - reports:/usr/src/app/reports
+
   protractor:
     image: ${TEST_IMAGE}
     command: ./bin/wait-for-hub npm run ${NPM_SCRIPT:-e2e-ci}
@@ -37,3 +43,25 @@ services:
     depends_on:
       - hub
       - webapp
+    volumes:
+      - reports:/usr/src/app/reports
+
+  allure:
+    image: mattupstate/allure
+    environment:
+      - ALLURE_PROPERTIES
+    volumes:
+      - reports:/usr/src/allure
+
+  aws:
+    image: mesosphere/aws-cli
+    environment:
+      - AWS_DEFAULT_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    working_dir: /work
+    volumes:
+      - reports:/work
+
+volumes:
+   reports:

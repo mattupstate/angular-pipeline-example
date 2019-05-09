@@ -29,11 +29,13 @@ RUN groupadd -r testuser \
     && mkdir -p /home/testuser \
     && chown -R testuser:testuser /home/testuser \
     && mkdir -p ${app_src_dir} \
+    && mkdir -p ${app_src_dir}/reports \
+    && mkdir -p ${app_src_dir}/dist \
     && chown -R testuser:testuser ${app_src_dir}
 USER testuser
 WORKDIR ${app_src_dir}
 COPY --chown=testuser:testuser package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 COPY --chown=testuser:testuser . ./
 ARG git_branch
 ARG git_commit_sha
