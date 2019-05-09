@@ -61,8 +61,7 @@ generate-allure-report() {
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     mesosphere/aws-cli s3 cp --recursive \
-      ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX} /work/app/allure/xml/history/ \
-    | sed -e 's/^/[generate-allure-report] /'
+      ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX} /work/app/allure/xml/history/
 
   export ALLURE_ENVIRONMENT="Hostname=$(hostname)
 Git.Commit=${GIT_COMMIT_SHA}
@@ -70,8 +69,8 @@ Git.Branch=${GIT_BRANCH}
 Docker.Version=$(docker --version)
 Docker.TestImage=${TEST_IMAGE}"
 
-  echo "[generate-allure-report] Allure environment:"
-  echo "${ALLURE_ENVIRONMENT}" | sed -e 's/^/[generate-allure-report] /'
+  echo "Allure environment:"
+  echo "${ALLURE_ENVIRONMENT}"
 
   docker run --rm \
     --env ALLURE_ENVIRONMENT \
@@ -80,8 +79,7 @@ Docker.TestImage=${TEST_IMAGE}"
     --entrypoint /bin/sh \
     mattupstate/allure -c '
       echo "$ALLURE_ENVIRONMENT" >> app/allure/xml/environment.properties &&
-      allure generate --clean --report-dir app/allure/html app/allure/xml' \
-    | sed -e 's/^/[generate-allure-report] /'
+      allure generate --clean --report-dir app/allure/html app/allure/xml'
 }
 
 publish-build-reports() {
@@ -89,8 +87,7 @@ publish-build-reports() {
     --env AWS_DEFAULT_REGION \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
-    mesosphere/aws-cli s3 rm --recursive ${BUILD_REPORTS_S3_KEY_PREFIX} \
-    | sed -e 's/^/[publish-build-reports] /'
+    mesosphere/aws-cli s3 rm --recursive ${BUILD_REPORTS_S3_KEY_PREFIX}
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -99,8 +96,7 @@ publish-build-reports() {
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
-      /work/app/ ${BUILD_REPORTS_S3_KEY_PREFIX} \
-    | sed -e 's/^/[publish-build-reports] /'
+      /work/app/ ${BUILD_REPORTS_S3_KEY_PREFIX}
 }
 
 publish-master-reports() {
@@ -108,8 +104,7 @@ publish-master-reports() {
     --env AWS_DEFAULT_REGION \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
-    mesosphere/aws-cli s3 rm --recursive ${MASTER_REPORTS_S3_KEY_PREFIX} \
-  | sed -e 's/^/[publish-master-reports] /'
+    mesosphere/aws-cli s3 rm --recursive ${MASTER_REPORTS_S3_KEY_PREFIX}
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -118,14 +113,13 @@ publish-master-reports() {
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
-      /work/app/ ${MASTER_REPORTS_S3_KEY_PREFIX} \
-  | sed -e 's/^/[publish-master-reports] /'
+      /work/app/ ${MASTER_REPORTS_S3_KEY_PREFIX}
 }
 
 reports() {
-  is-ci-context && generate-allure-report || echo "[Reports] Skipping report generation"
-  is-ci-context && publish-build-reports || echo "[Reports] Skipping build report"
-  is-ci-context && is-master-branch && publish-master-report || echo "[Reports] Skipping master report" :
+  is-ci-context && generate-allure-report || :
+  is-ci-context && publish-build-reports || :
+  is-ci-context && is-master-branch && publish-master-report || :
 }
 
 code-climate-start() {

@@ -47,7 +47,7 @@ publish-build-reports() {
     --volume ${PWD}/reports/app/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
       /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/ \
-  | sed -e 's/^/[publish-build-reports] /'
+  2>&1 | sed -e 's/^/[publish-build-reports] /'
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -57,7 +57,7 @@ publish-build-reports() {
     --volume ${PWD}/reports/e2e/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
       /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/ \
-  | sed -e 's/^/[publish-build-reports] /'
+  2>&1 | sed -e 's/^/[publish-build-reports] /'
 }
 
 publish-master-reports() {
@@ -69,7 +69,7 @@ publish-master-reports() {
     --volume ${PWD}/reports/app/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
       /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/ \
-  | sed -e 's/^/[publish-master-reports] /'
+  2>&1 | sed -e 's/^/[publish-master-reports] /'
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -79,7 +79,7 @@ publish-master-reports() {
     --volume ${PWD}/reports/e2e/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
       /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/ \
-  | sed -e 's/^/[publish-master-reports] /'
+  2>&1 | sed -e 's/^/[publish-master-reports] /'
 }
 
 reports() {
