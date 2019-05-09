@@ -5,7 +5,7 @@ services:
     image: selenium/hub:3
 
   firefox:
-    image: selenium/${SELENIUM_FIREFOX_IMAGE}:3
+    image: selenium/${SELENIUM_FIREFOX_IMAGE:-node-firefox}:3
     ports:
       - 5900
     volumes:
@@ -16,7 +16,7 @@ services:
       - hub
 
   chrome:
-    image: selenium/${SELENIUM_CHROME_IMAGE}:3
+    image: selenium/${SELENIUM_CHROME_IMAGE:-node-chrome}:3
     ports:
       - 5900
     volumes:

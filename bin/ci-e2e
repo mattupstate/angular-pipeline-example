@@ -32,9 +32,6 @@ if [[ "${CI}" == "true" ]]; then
   fi
 fi
 
-export SELENIUM_CHROME_IMAGE=node-chrome
-export SELENIUM_FIREFOX_IMAGE=node-firefox
-
 CONTAINER_NAME=test-${DOCKER_BUILD_CHECKSUM}
 CONTAINER_REPORTS_ROOT_DIR=${CONTAINER_SRC_DIR}/reports
 BUILD_REPORTS_S3_KEY_PREFIX=${BUILD_S3_KEY_PREFIX%/}/reports/e2e/
@@ -47,6 +44,12 @@ is-ci-context() {
 
 is-master-branch() {
   [[ "${GIT_BRANCH}" == "master" ]]
+}
+
+prep() {
+  for I in mesosphere/aws-cli mattupstate/allure; do
+    docker pull $I
+  done
 }
 
 clean() {
@@ -77,7 +80,7 @@ DockerCompose.Version=$(docker-compose --version)"
 
 publish-build-reports() {
   docker-compose run --rm aws \
-    s3 rm --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
+    s3 rm --quiet --recursive ${BUILD_REPORTS_S3_KEY_PREFIX}
 
   docker-compose run --rm aws \
     s3 cp --quiet --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
@@ -87,7 +90,7 @@ publish-build-reports() {
 
 publish-master-reports() {
   docker-compose run --rm aws \
-    s3 rm --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
+    s3 rm --quiet --recursive ${MASTER_REPORTS_S3_KEY_PREFIX}
 
   docker-compose run --rm aws \
     s3 cp --quiet --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
@@ -111,6 +114,7 @@ tests() {
     hub firefox chrome webapp protractor
 }
 
+prep
 tests
 E2E_EXIT_CODE=$?
 reports

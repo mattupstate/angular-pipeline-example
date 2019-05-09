@@ -33,6 +33,12 @@ is-master-branch() {
   [[ "${GIT_BRANCH}" == "master" ]]
 }
 
+prep() {
+  for I in ${TEST_IMAGE} mesosphere/aws-cli mattupstate/allure; do
+    docker pull $I
+  done
+}
+
 clean() {
   docker rm ${CONTAINER_NAME} 2>/dev/null >/dev/null || :
   docker volume rm ${REPORTS_VOLUME} 2>/dev/null >/dev/null || :
@@ -109,6 +115,7 @@ analysis() {
   docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint-ci
 }
 
+prep
 analysis
 ANALYSIS_EXIT_CODE=$?
 reports
