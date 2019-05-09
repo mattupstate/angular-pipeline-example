@@ -10,56 +10,82 @@ if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
   exit 1
 fi
 
-if [[ -z ${BUILD_S3_KEY_PREFIX+x} ]]; then
-  echo 'BUILD_S3_KEY_PREFIX is not set'
-  exit 1
-fi
-
-set -x
-
-CONTAINER_NAME=analysis-${DOCKER_BUILD_CHECKSUM}
-
-pre-analysis() {
-  docker rm ${CONTAINER_NAME} 2>/dev/null || :
-}
-
-post-analysis() {
-  if [[ "${CI}" == "true" ]] && [[ "${GIT_BRANCH}" == "master" ]]; then
-    mkdir -p dirname ${PWD}/reports/app
-    docker cp ${CONTAINER_NAME}:/usr/src/app/reports/app/lint ${PWD}/reports/app/
-
-    mkdir -p dirname ${PWD}/reports/e2e
-    docker cp ${CONTAINER_NAME}:/usr/src/app/reports/e2e/lint ${PWD}/reports/e2e/
-
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --workdir /work \
-      --volume ${PWD}/reports/app/lint:/work \
-      mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
-
-    docker run --rm \
-      --env AWS_DEFAULT_REGION \
-      --env AWS_ACCESS_KEY_ID \
-      --env AWS_SECRET_ACCESS_KEY \
-      --workdir /work \
-      --volume ${PWD}/reports/e2e/lint:/work \
-      mesosphere/aws-cli s3 cp --acl private --recursive \
-        /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
+if [[ -z "${CI}" == "true" ]]; then
+  if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
+    echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
+    exit 1
   fi
 
-  # Cleanup
-  docker rm ${CONTAINER_NAME}
+  if [[ -z ${BUILD_S3_KEY_PREFIX+x} ]]; then
+    echo 'BUILD_S3_KEY_PREFIX must be set when CI=true'
+    exit 1
+  fi
+fi
+
+REPORTS_VOLUME=reports-${DOCKER_BUILD_CHECKSUM}
+CONTAINER_NAME=analysis-${DOCKER_BUILD_CHECKSUM}
+
+clean() {
+  docker rm ${CONTAINER_NAME} 2>/dev/null >/dev/null || :
+  docker volume rm ${REPORTS_VOLUME} 2>/dev/null >/dev/null || :
 }
 
-pre-analysis
+publish-build-reports() {
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${PWD}/reports/app/lint:/work \
+    mesosphere/aws-cli s3 cp --acl private --recursive \
+      /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/ \
+  | sed -e 's/^/[publish-build-reports] /'
 
-docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint-ci
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${PWD}/reports/e2e/lint:/work \
+    mesosphere/aws-cli s3 cp --acl private --recursive \
+      /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/ \
+  | sed -e 's/^/[publish-build-reports] /'
+}
 
+publish-master-reports() {
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${PWD}/reports/app/lint:/work \
+    mesosphere/aws-cli s3 cp --acl private --recursive \
+      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/ \
+  | sed -e 's/^/[publish-master-reports] /'
+
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volume ${PWD}/reports/e2e/lint:/work \
+    mesosphere/aws-cli s3 cp --acl private --recursive \
+      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/ \
+  | sed -e 's/^/[publish-master-reports] /'
+}
+
+reports() {
+  is-ci-context && publish-build-reports || :
+  is-ci-context && is-master-branch && publish-master-report || :
+}
+
+analysis() {
+  docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint-ci
+}
+
+analysis
 ANALYSIS_EXIT_CODE=$?
-
-post-analysis
+reports
+clean
 
 exit ${ANALYSIS_EXIT_CODE}

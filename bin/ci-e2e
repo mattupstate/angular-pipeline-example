@@ -54,6 +54,11 @@ clean() {
 }
 
 generate-allure-report() {
+  docker-compose run --rm aws \
+    s3 cp --acl private --recursive \
+      ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX} /work/e2e/allure/xml/history/ \
+    | sed -e 's/^/[generate-allure-report] /'
+
   export ALLURE_ENVIRONMENT="Hostname=$(hostname)
 Git.Commit=${GIT_COMMIT_SHA}
 Git.Branch=${GIT_BRANCH}
@@ -61,28 +66,34 @@ Docker.Version=$(docker --version)
 Docker.TestImage=${TEST_IMAGE}
 DockerCompose.Version=$(docker-compose --version)"
 
+  echo "[generate-allure-report] Allure environment:"
+  echo "${ALLURE_ENVIRONMENT}" | sed -e 's/^/[generate-allure-report] /'
+
   docker-compose run --rm --entrypoint /bin/sh allure -c '
-    echo "$ALLURE_ENVIRONMENT" >> e2e/allure/xml/environment.properties &&
-    cat e2e/allure/xml/environment.properties &&
-    allure generate --clean --report-dir e2e/allure/html e2e/allure/xml'
+      echo "$ALLURE_ENVIRONMENT" >> e2e/allure/xml/environment.properties &&
+      allure generate --clean --report-dir e2e/allure/html e2e/allure/xml' \
+    | sed -e 's/^/[generate-allure-report] /'
 }
 
-publish-reports() {
+publish-build-reports() {
   docker-compose run --rm aws \
-    s3 cp --quiet --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
-
-  if [[ "${GIT_BRANCH}" == "master" ]]; then
-    docker-compose run --rm aws \
-      s3 cp --quiet --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
-  fi
+    s3 cp --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX} \
+    | sed -e 's/^/[publish-build-reports] /'
 }
 
-do-reports() {
-  is-ci-context && is-master-branch \
-    && generate-allure-report && publish-reports || :
+publish-master-reports() {
+  docker-compose run --rm aws \
+    s3 cp --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX} \
+    | sed -e 's/^/[publish-master-reports] /'
 }
 
-do-tests() {
+reports() {
+  is-ci-context && generate-allure-report || :
+  is-ci-context && publish-build-reports || :
+  is-ci-context && is-master-branch && publish-master-report || :
+}
+
+tests() {
   docker-compose up \
     --abort-on-container-exit \
     --exit-code-from protractor \
@@ -92,9 +103,9 @@ do-tests() {
     hub firefox chrome webapp protractor
 }
 
-do-tests
+tests
 E2E_EXIT_CODE=$?
-do-reports
+reports
 clean
 
 exit ${E2E_EXIT_CODE}
