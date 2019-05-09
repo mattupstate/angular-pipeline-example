@@ -43,11 +43,26 @@ publish-build-reports() {
     --env AWS_DEFAULT_REGION \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
+    mesosphere/aws-cli s3 rm --recursive --quiet \
+      ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
+
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${PWD}/reports/app/lint:/work \
-    mesosphere/aws-cli s3 cp --acl private --recursive \
-      /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/ \
-  2>&1 | sed -e 's/^/[publish-build-reports] /'
+    mesosphere/aws-cli s3 cp --acl private --recursive --quiet \
+      /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
+
+  echo "Build report published to: ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/"
+
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    mesosphere/aws-cli s3 rm --recursive --quiet \
+      ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -56,8 +71,9 @@ publish-build-reports() {
     --workdir /work \
     --volume ${PWD}/reports/e2e/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
-      /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/ \
-  2>&1 | sed -e 's/^/[publish-build-reports] /'
+      /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
+
+  echo "Build report published to: ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/"
 }
 
 publish-master-reports() {
@@ -68,8 +84,9 @@ publish-master-reports() {
     --workdir /work \
     --volume ${PWD}/reports/app/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
-      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/ \
-  2>&1 | sed -e 's/^/[publish-master-reports] /'
+      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
+
+  echo "Master report published to: ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/"
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -78,13 +95,14 @@ publish-master-reports() {
     --workdir /work \
     --volume ${PWD}/reports/e2e/lint:/work \
     mesosphere/aws-cli s3 cp --acl private --recursive \
-      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/ \
-  2>&1 | sed -e 's/^/[publish-master-reports] /'
+      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
+
+  echo "Master report published to: ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/"
 }
 
 reports() {
   is-ci-context && publish-build-reports || :
-  is-ci-context && is-master-branch && publish-master-report || :
+  is-ci-context && is-master-branch && publish-master-reports || :
 }
 
 analysis() {

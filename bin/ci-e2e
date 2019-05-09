@@ -55,8 +55,10 @@ clean() {
 
 generate-allure-report() {
   docker-compose run --rm aws \
-    s3 cp --acl private --recursive \
+    s3 cp --quiet --acl private --recursive \
       ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX} /work/e2e/allure/xml/history/
+
+  echo "Allure report history fetched from ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX}"
 
   export ALLURE_ENVIRONMENT="Hostname=$(hostname)
 Git.Commit=${GIT_COMMIT_SHA}
@@ -75,18 +77,28 @@ DockerCompose.Version=$(docker-compose --version)"
 
 publish-build-reports() {
   docker-compose run --rm aws \
-    s3 cp --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
+    s3 rm --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
+
+  docker-compose run --rm aws \
+    s3 cp --quiet --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
+
+  echo "Build report published to ${BUILD_REPORTS_S3_KEY_PREFIX}"
 }
 
 publish-master-reports() {
   docker-compose run --rm aws \
-    s3 cp --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
+    s3 rm --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
+
+  docker-compose run --rm aws \
+    s3 cp --quiet --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
+
+  echo "Master report published to ${MASTER_REPORTS_S3_KEY_PREFIX}"
 }
 
 reports() {
   is-ci-context && generate-allure-report || :
   is-ci-context && publish-build-reports || :
-  is-ci-context && is-master-branch && publish-master-report || :
+  is-ci-context && is-master-branch && publish-master-reports || :
 }
 
 tests() {
