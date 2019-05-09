@@ -21,8 +21,8 @@ if [[ -z ${DIST_IMAGE+x} ]]; then
 fi
 
 if [[ "${CI}" == "true" ]]; then
-  if [[ -z ${GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX+x} ]]; then
-    echo 'GLOBAL_ALLURE_HISTORY_S3_KEY_PREFIX must be set when CI=true'
+  if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
+    echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
     exit 1
   fi
 
