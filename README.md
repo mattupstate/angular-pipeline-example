@@ -86,6 +86,8 @@ The `make release-candidate` step copies the build artifacts to S3. Additionally
 
     http://${GIT_COMMIT_SHA}.angular-pipeline-example.mattupstate.com
 
+The script also publishes release artifacts to [Sentry](https://getsentry.com).
+
 ### `make smoke-test`
 
 The `make smoke-tests` step runs a specicialized end-to-end test configuration designed to perform lightweight, non-volatile tests against a release candidate. These tests access the release candidate using the convention hostname described above.
@@ -259,11 +261,21 @@ You will be prompted to enter a password. Enter `secret` and you should then be 
 
 Once you've reached a browser window, you can then enter `http://webapp` into the address bar to load the application. The Chrome developer tools are also very useful in this context.
 
-### Angular Modificiations
+### Angular App
+
+#### Segment.com Usage
+
+I've integrated Segment.com into the Angular app as I wanted to do a rudimentary evaluation of how their service works with Google Analytics. Configuration of this service can be seen in `src/app/app.module.providers.ts`.
+
+#### Sentry Usage
+
+I've integrated [Sentry](http://getsentry.com) into the Angular app as I wanted to do a rudimentary evaluation of their hosted service. Initially I tried Rollbar but could not for the life of me figure out how to correlate errors with deploys/versions. At any rate, configuration of the custom error handler can be seen in `src/app/app.module.providers.ts`.
+
+#### Modifications
 
 I initially generated the Angular project using the Angular CLI. However, I added, and made edits to, the following files to suit my needs and preferences.
 
-#### `angular.json`
+##### `angular.json`
 
 - Changed the `outputPath` value to simply be `dist` instead of `dist/angular-pipeline-example` for the default `build` configuration to avoid having to deal with a named directory in build tooling.
 - Added `"codeCoverage": true` to the default `test` options.
@@ -271,15 +283,15 @@ I initially generated the Angular project using the Angular CLI. However, I adde
 - Added language specific production build configurations.
 - Set `"sourceMap": true` in the `build:production-${lang}` configuration because I believe shipping source maps to production is a good thing.
 
-#### `src/karma.conf.js`
+##### `src/karma.conf.js`
 
 - Changed the code coverage report to be saved to `../reports/coverage'
 
-#### `e2e/protractor.*`
+##### `e2e/protractor.*`
 
 I've setup a unique configuration file for each logical `e2e` configuration in `angular.json`. The default configuration, `protractor.conf.js`, is designed to be used locally by developers. Where as `protractor.ci.conf.js` and `protractor.smoke.conf.js` are designed to be used in the CI context.
 
-### Google Chrome HSTS Snafu
+#### Google Chrome HSTS Snafu
 
 Long story short: the hostname `app` is on Google Chrome's HSTS preload list. This preload list informs Google Chrome to automatically access any content over HTTPS. As such, I had to change the name of the Angular application service in the `docker-compose.yml` file from `app` to `webapp` to prevent Chrome from changing the protocol from HTTP to HTTPS without first contacting the server.
 
