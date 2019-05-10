@@ -88,7 +88,6 @@ DockerCompose.Version=$(docker-compose --version)"
       allure generate --clean --report-dir e2e/allure/html e2e/allure/xml'
 
   docker run --rm \
-    docker run --rm \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     --entrypoint /usr/bin/tree \

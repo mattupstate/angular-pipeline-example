@@ -76,7 +76,7 @@ generate-report-index() {
   docker run --rm \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
-    ${TEST_IMAGE} tree -H '.' -L 1 --noreport --charset utf-8 ${1}/lint > ${1}/lint/index.html
+    ${TEST_IMAGE} tree -H '.' -L 1 --noreport --charset utf-8 reports/${1}/lint > reports/${1}/lint/index.html
 }
 
 generate-report-indexes() {

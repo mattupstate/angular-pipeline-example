@@ -94,7 +94,6 @@ Docker.TestImage=${TEST_IMAGE}"
       allure generate --clean --report-dir app/allure/html app/allure/xml'
 
   docker run --rm \
-    docker run --rm \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     --entrypoint /usr/bin/tree \
