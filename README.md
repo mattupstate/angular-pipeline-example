@@ -124,6 +124,10 @@ Finally, here are some notes that describe some of the underlying details.
 
 I've purposely not used the `--rm` flag for `docker run` commands. Leaving containers around after executing commands can be helpful when debugging. It also affords me the ability to copy resources out of a stopped container to the host.
 
+### Allure Usage
+
+[Allure](https://docs.qameta.io/allure/) is a test report tool that produces a static web UI and has the option to track testing trends over time. I've configured both the unit and end-to-end tests with an Allure reporter. From the resulting XML the Allure command line tool is then used to generate a report. The reports, along with coverage and checkstyle results, are published to S3.
+
 ### DNSimple Usage
 
 DNSimple is my personal DNS management service. In the `./etc/terraform/resources.tf` file you will see two DNS records for this example application:
@@ -137,7 +141,7 @@ Additionally, I've created an API token under my account specific to this projec
 
 ### AWS Usage
 
-AWS S3 is used as a static build artifact repository. I've configured the S3 bucket using the [static hosting feature](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html). I've also added a bucket policy that restricts access from Fastly's known IP addresses.
+AWS S3 is used as a static build artifact repository. I've configured the S3 bucket using the [static hosting feature](https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html).
 
 Additionally, under my personal AWS account I've created an IAM user to manage API access in the context of Semaphore CI. The access key ID and secret have been provided to Semaphore so that I can automate changes in the CI+CD context.
 
