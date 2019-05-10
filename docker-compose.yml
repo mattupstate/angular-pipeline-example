@@ -49,7 +49,7 @@ services:
   allure:
     image: mattupstate/allure
     environment:
-      - ALLURE_PROPERTIES
+      - ALLURE_ENVIRONMENT
     volumes:
       - reports:/usr/src/allure
 
