@@ -67,7 +67,7 @@ publish-app-lint-results() {
 }
 
 publish-e2e-lint-results() {
-  publish-lint-results app ${1}
+  publish-lint-results e2e ${1}
 }
 
 publish-build-reports() {
