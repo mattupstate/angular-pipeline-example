@@ -41,17 +41,17 @@ blocks:
           - checkout
           - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
           - make e2e
+      - name: Infrastructure
+        commands:
+          - checkout
+          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+          - make release-plan
 
   - name: Release Candidate
     task:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
-      - name: Plan
-        commands:
-          - checkout
-          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make release-plan
       - name: Artifacts
         commands:
           - checkout
