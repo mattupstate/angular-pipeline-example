@@ -1,0 +1,62 @@
+#!/bin/bash
+
+if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
+  echo 'GIT_COMMIT_SHA is not set'
+  exit 1
+fi
+
+if [[ -z ${TEST_IMAGE+x} ]]; then
+  echo 'TEST_IMAGE is not set'
+  exit 1
+fi
+
+if [[ -z ${RELEASE_S3_KEY_PREFIX+x} ]]; then
+  echo 'RELEASE_S3_KEY_PREFIX is not set'
+  exit 1
+fi
+
+CONTAINER_NAME="dist-$(uuidgen)"
+
+prep() {
+  for I in ${TEST_IMAGE} getsentry/sentry-cli:latest; do
+    docker pull $I
+  done
+}
+
+clean() {
+  docker rm ${CONTAINER_NAME} 2>/dev/null
+}
+
+sentry-release() {
+  docker run --rm \
+    --env SENTRY_AUTH_TOKEN \
+    --env SENTRY_ORG \
+    --volume ${PWD}:/work \
+    getsentry/sentry-cli releases $@
+}
+
+report-release() {
+  sentry-release new -p angular-pipeline-example ${GIT_COMMIT_SHA}
+  sentry-release set-commits --auto ${GIT_COMMIT_SHA}
+  sentry-release finalize ${GIT_COMMIT_SHA}
+}
+
+publish-artifacts() {
+  docker create --name ${CONTAINER_NAME} ${TEST_IMAGE}
+
+  docker run --rm \
+    --env AWS_DEFAULT_REGION \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    --workdir /work \
+    --volumes-from ${CONTAINER_NAME} \
+    mesosphere/aws-cli \
+      s3 cp --acl private --recursive /usr/src/app/dist ${RELEASE_S3_KEY_PREFIX}
+}
+
+prep
+publish-artifacts && report-release
+PUBLISH_EXIT_STATUS=$?
+clean
+
+exit ${PUBLISH_EXIT_STATUS}
