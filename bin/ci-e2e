@@ -69,7 +69,9 @@ Docker.Version=$(docker --version)
 Docker.TestImage=${TEST_IMAGE}
 DockerCompose.Version=$(docker-compose --version)"
 
-  docker-compose run --rm --entrypoint /bin/sh allure -c '
+  docker-compose run --rm \
+    --env ALLURE_ENVIRONMENT \
+    --entrypoint /bin/sh allure -c '
       echo "$ALLURE_ENVIRONMENT" >> e2e/allure/xml/environment.properties
       echo "Allure environment:"
       cat e2e/allure/xml/environment.properties
