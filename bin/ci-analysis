@@ -77,7 +77,7 @@ generate-report-index() {
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     --entrypoint /bin/sh ${TEST_IMAGE} -c '
-      tree -H '.' -L 1 --noreport --charset utf-8 reports/'${1}'/lint > reports/'${1}'/lint/index.html'
+      tree -H . -L 1 --noreport --charset utf-8 '${1}'/lint > '${1}'/lint/index.html'
 }
 
 publish-app-lint-results() {

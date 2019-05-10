@@ -97,13 +97,13 @@ Docker.TestImage=${TEST_IMAGE}"
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     --entrypoint /bin/sh ${TEST_IMAGE} -c '
-      tree -H '.' -L 1 --noreport --charset utf-8 app/allure > app/allure/index.html'
+      tree -H . -L 1 --noreport --charset utf-8 app/allure > app/allure/index.html'
 
   docker run --rm \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     --entrypoint /bin/sh ${TEST_IMAGE} -c '
-      tree -H '.' -L 1 --noreport --charset utf-8 app/allure/xml > app/allure/xml/index.html'
+      tree -H . -L 1 --noreport --charset utf-8 app/allure/xml > app/allure/xml/index.html'
 }
 
 publish-report() {

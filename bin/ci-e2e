@@ -90,12 +90,12 @@ DockerCompose.Version=$(docker-compose --version)"
   docker-compose run --rm \
     --env ALLURE_ENVIRONMENT \
     --entrypoint /bin/sh protractor -c '
-      tree -H '.' -L 1 --noreport --charset utf-8 e2e/allure > e2e/allure/index.html'
+      tree -H . -L 1 --noreport --charset utf-8 e2e/allure > e2e/allure/index.html'
 
   docker-compose run --rm \
     --env ALLURE_ENVIRONMENT \
     --entrypoint /bin/sh protractor -c '
-      tree -H '.' -L 1 --noreport --charset utf-8 e2e/allure/xml > e2e/allure/xml/index.html'
+      tree -H . -L 1 --noreport --charset utf-8 e2e/allure/xml > e2e/allure/xml/index.html'
 }
 
 publish-allure-report() {
