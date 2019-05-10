@@ -54,55 +54,45 @@ However, the images used for the Protractor and Angular application services are
 
 ## Build Steps
 
-Each step in the pipeline, as expressed by the `make` targets, executes a `npm run` command in one of the aforementioned execution contexts. Each `npm run` invokes a script that has been designed specifically for a CI environment, whereas the scripts that come out of the box with Angular are generally designed for a local development environment. The following is a description of each of the build steps.
+Each step in the pipeline, as expressed by the `make` targets, executes a shell script located in the `bin/` folder. The `Makefile` dynamically declares these targets using a convention where any script filename in the `bin/` that begins with `ci-`. The following is a description of each of the build steps.
 
 ### `make test`
 
-The `make test` step runs the application unit tests in the test execution context. Under the hood it runs the following `docker` command:
+The `make test` step runs the application unit tests in the test execution context. When executed in the CI/CD context it also publishes code coverage data to Code Climate and publishes reports to S3 at:
 
-    $ docker run --name $(TEST_CONTAINER_NAME) --security-opt seccomp=$(TEST_DOCKER_SECCOMP_FILE) \$(TEST_DOCKER_IMAGE_TAG) npm run test-ci
-
-Notice the `--security-opt` flag. This runs the container in a relatively secure manner and can prevent bad things from happening when executing code in Google Chrome.
-
-The `npm run test-ci` script invokes `ng lint -c ci` which runs the test suite using the `test:ci` configuration expressed in the `angular.json`.
+    http://angular-pipeline-example.mattupstate.com.s3-website.us-east-2.amazonaws.com/builds/${GIT_COMMIT_SHA}/reports/app/allure/html/
+    http://angular-pipeline-example.mattupstate.com.s3-website.us-east-2.amazonaws.com/builds/${GIT_COMMIT_SHA}/reports/app/coverage/
 
 ### `make analysis`
 
-The `make analysis` step runs the Angular linting static analysis tool in the test execution context. Under the hood it runs the following `docker` command:
+The `make analysis` step runs static analysis in the test execution context. When executed in the CI/CD context it publishes the checkstyle output to S3 at:
 
-    $ docker run --name $(TEST_CONTAINER_NAME) $(TEST_DOCKER_IMAGE_TAG) npm run lint
-
-The `npm run lint` script invokes `ng lint` which runs the linting tool using the default configuration expressed in the `angular.json`. The configuration instructs the linting tool to produce a human readable report using the the `codeFrame` format.
+    http://angular-pipeline-example.mattupstate.com.s3-website.us-east-2.amazonaws.com/builds/${GIT_COMMIT_SHA}/reports/app/lint/checkstyle.xml
+    http://angular-pipeline-example.mattupstate.com.s3-website.us-east-2.amazonaws.com/builds/${GIT_COMMIT_SHA}/reports/e2e/lint/checkstyle.xml
 
 ### `make audit`
 
-The `make audit` step runs a custom shell script in the test execution context. Under the hood it runs the following `docker` command:
-
-    $ docker run --name $(TEST_CONTAINER_NAME) $(TEST_DOCKER_IMAGE_TAG) npm run audit-ci
-
-The custom shell script behind `npm run audit-ci` evaluates the combined total of moderate, high, and critical vulnerabilites found in the application dependencies. Should the combined total be higher than `0` the script will print a human readable vulnerability report and return a non-zero exit code.
+The `make audit` step performs a dependency audit in the test execution context. The script evaluates the combined total of moderate, high, and critical vulnerabilites found in the application dependencies. Should the combined total be higher than the defined threshold the script will print a human readable report and return a non-zero exit code.
 
 ### `make e2e`
 
-The `make e2e` step runs the application end-to-end tests in the end-to-end execution context. This is performed using the following command:
+The `make e2e` step runs the application end-to-end tests in the end-to-end execution context. When executed in the CI/CD context a test report is published to S3 at:
 
-    $ SELENIUM_CHROME_IMAGE=node-chrome SELENIUM_FIREFOX_IMAGE=node-firefox docker-compose up --exit-code-from protractor --force-recreate --remove-orphans --quiet-pull
-
-Docker Compose will run all the specified services and, because the `--exit-code-from protractor` option was used, it will stop all services and return the exit code of the `protractor` service when the `protractor` service container stops.
-
-The command specified to run in the `protractor` services is `wait-for-hub npm run e2e-ci`. This makes use of a custom script (`bin/wait-for-hub`) that waits for the Selenium Hub service to be aware of both Chrome and Firefox. Once ready, the script then calls `ng e2e -c ci` which runs Protractor using the `e2e:ci` configuration expressed in the `angular.json`.
+    http://angular-pipeline-example.mattupstate.com.s3-website.us-east-2.amazonaws.com/builds/${GIT_COMMIT_SHA}/reports/e2e/allure/html/
 
 ### `make release-candidate`
 
-The `make release-candidate` step copies the build artifacts to an S3 bucket via the AWS command line tool. Additionally, the artifacts are stored in the bucket using a versioned key prefix such that multiple versions of the application may be accessed using a conventional hostname.
+The `make release-candidate` step copies the build artifacts to S3. Additionally, the artifacts are stored in the bucket using a versioned key prefix such that multiple versions of the application may be accessed using a conventional hostname in the form of:
+
+    http://${GIT_COMMIT_SHA}.angular-pipeline-example.mattupstate.com
 
 ### `make smoke-test`
 
-The `make smoke-tests` step runs a specicialized end-to-end test configuration designed to perform lightweight, non-volatile tests against a newly published version of the application.
+The `make smoke-tests` step runs a specicialized end-to-end test configuration designed to perform lightweight, non-volatile tests against a release candidate. These tests access the release candidate using the convention hostname described above.
 
 ### `make release`
 
-The `make release` step applies any desired changes to the cloud infrastructure that delivers the application on the public internet. Cloud infrastructure is managed using Terraform.
+The `make release` step applies changes to the cloud infrastructure that delivers the application on the public internet. More specifically, the Fastly Varnish configuration is updated to point the [default hostname](http://angular-pipeline-example.mattupstate.com) to the release candidate on S3. This procedure is performed using Terraform.
 
 ## Public CI Integration
 
@@ -115,6 +105,10 @@ Once I completed the `make` + `docker` based pipeline I integrated the build pip
 ### Code Climate
 
 [Code Climate](https://codeclimate.com) is a public code quality service. Having learned about it recently (I used to use [coveralls.io](coveralls.io)) I figured I'd try it out. It's relatively simple to setup. I've integrated their test reporter tool in the `make test` target. Execution of the test reporter is conditional on being in the CI context. View the project's public Code Climate page [here](https://codeclimate.com/github/mattupstate/angular-pipeline-example).
+
+### Buildkite
+
+While working on this project I discovered [Buildkite](https://buildkite.com). You'll notice a `.buildkite/` folder in this project as well as I wanted to try out their service. Buildkite is different from most public CI services in that you run the build agents. So I've installed the build agent on a commodity Digital Ocean droplet I've had for a while.
 
 ## Notes
 
