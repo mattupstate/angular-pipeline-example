@@ -5,11 +5,6 @@ if [[ -z ${TEST_IMAGE+x} ]]; then
   exit 1
 fi
 
-if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
-  echo 'DOCKER_BUILD_CHECKSUM is not set'
-  exit 1
-fi
-
 if [[ "${CI}" == "true" ]]; then
   if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
     echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
@@ -22,8 +17,10 @@ if [[ "${CI}" == "true" ]]; then
   fi
 fi
 
-REPORTS_VOLUME=reports-${DOCKER_BUILD_CHECKSUM}
-CONTAINER_NAME=analysis-${DOCKER_BUILD_CHECKSUM}
+REPORTS_VOLUME=reports-$(uuid)
+CONTAINER_NAME=analysis-$(uuid)
+CONTAINER_SRC_DIR=/usr/src/app
+CONTAINER_REPORTS_ROOT_DIR=${CONTAINER_SRC_DIR}/reports
 
 is-ci-context() {
   [[ "${CI}" == "true" ]]
@@ -112,7 +109,10 @@ reports() {
 }
 
 analysis() {
-  docker run --name ${CONTAINER_NAME} ${TEST_IMAGE} npm run lint-ci
+  docker volume create ${REPORTS_VOLUME}
+  docker run --name ${CONTAINER_NAME} \
+    --volume ${REPORTS_VOLUME}:${CONTAINER_REPORTS_ROOT_DIR} \
+    ${TEST_IMAGE} npm run lint-ci
 }
 
 prep

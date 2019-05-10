@@ -15,11 +15,6 @@ if [[ -z ${TEST_IMAGE+x} ]]; then
   exit 1
 fi
 
-if [[ -z ${DOCKER_BUILD_CHECKSUM+x} ]]; then
-  echo 'DOCKER_BUILD_CHECKSUM is not set'
-  exit 1
-fi
-
 if [[ "${CI}" == "true" ]]; then
   if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
     echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
@@ -32,8 +27,8 @@ if [[ "${CI}" == "true" ]]; then
   fi
 fi
 
-REPORTS_VOLUME=reports-${DOCKER_BUILD_CHECKSUM}
-CONTAINER_NAME=test-${DOCKER_BUILD_CHECKSUM}
+REPORTS_VOLUME=reports-$(uuid)
+CONTAINER_NAME=test-$(uuid)
 CONTAINER_SRC_DIR=/usr/src/app
 CONTAINER_REPORTS_ROOT_DIR=${CONTAINER_SRC_DIR}/reports
 BUILD_REPORTS_S3_KEY_PREFIX=${BUILD_S3_KEY_PREFIX%/}/reports/app/
@@ -77,16 +72,15 @@ Git.Branch=${GIT_BRANCH}
 Docker.Version=$(docker --version)
 Docker.TestImage=${TEST_IMAGE}"
 
-  echo "Allure environment:"
-  echo "${ALLURE_ENVIRONMENT}"
-
   docker run --rm \
     --env ALLURE_ENVIRONMENT \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     --entrypoint /bin/sh \
     mattupstate/allure -c '
-      echo "$ALLURE_ENVIRONMENT" >> app/allure/xml/environment.properties &&
+      echo "$ALLURE_ENVIRONMENT" >> app/allure/xml/environment.properties
+      echo "Allure environment:"
+      cat app/allure/xml/environment.properties
       allure generate --clean --report-dir app/allure/html app/allure/xml'
 }
 

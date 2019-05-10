@@ -8,14 +8,14 @@ As part of this effort I hope to use a (subjectively) minimal amount of tools th
 
 The CI+CD pipeline can be expressed as a set of ordered steps:
 
-1. Run unit tests
-2. Run static analysis
-3. Run dependency audit
-4. Run end-to-end tests
-5. Run infrastructure change plan
-6. Deploy artifacts
-7. Run smoke tests
-8. Deploy infrastructure
+1. Unit tests
+2. Static analysis
+3. Dependency audit
+4. End-to-end tests
+5. Infrastructure change test
+6. Publish release candidate
+7. Smoke tests
+8. Apply infrastructure changes
 
 These steps would execute on every change to the `master` branch. Where as any other branch the last step would be `#5`. Implicit in this pipeline are additional steps that build the execution contexts and distributable application artifacts.
 
@@ -25,10 +25,10 @@ I've implemented this pipeline using a `Makefile`. I've chosen `make` as a tool 
 2. `make analysis`
 3. `make audit`
 4. `make e2e`
-5. `make infra-plan`
-6. `make artifacts-deploy`
+5. `make release-plan`
+6. `make release-candidate`
 7. `make smoke-test`
-8. `make infra-deploy`
+8. `make release`
 
 ## Execution Contexts
 
@@ -92,17 +92,17 @@ Docker Compose will run all the specified services and, because the `--exit-code
 
 The command specified to run in the `protractor` services is `wait-for-hub npm run e2e-ci`. This makes use of a custom script (`bin/wait-for-hub`) that waits for the Selenium Hub service to be aware of both Chrome and Firefox. Once ready, the script then calls `ng e2e -c ci` which runs Protractor using the `e2e:ci` configuration expressed in the `angular.json`.
 
-### `make artifacts-deploy`
+### `make release-candidate`
 
-The `make artifacts-deploy` step copies the build artifacts to an S3 bucket via the AWS command line tool. Additionally, the artifacts are stored in the bucket using a versioned key prefix such that multiple versions of the application may be accessed using a conventional hostname.
+The `make release-candidate` step copies the build artifacts to an S3 bucket via the AWS command line tool. Additionally, the artifacts are stored in the bucket using a versioned key prefix such that multiple versions of the application may be accessed using a conventional hostname.
 
 ### `make smoke-test`
 
 The `make smoke-tests` step runs a specicialized end-to-end test configuration designed to perform lightweight, non-volatile tests against a newly published version of the application.
 
-### `make infra-deploy`
+### `make release`
 
-The `make infra-deploy` step applies any desired changes to the cloud infrastructure that delivers the application on the public internet. Cloud infrastructure is managed using Terraform.
+The `make release` step applies any desired changes to the cloud infrastructure that delivers the application on the public internet. Cloud infrastructure is managed using Terraform.
 
 ## Public CI Integration
 
@@ -244,10 +244,6 @@ Angular uses HTML5 push state for routing. Therefore, any time a user accesses t
 The Varnish configuration is also aware of the wildcard DNS entry (mentioned above) in order to be able to access `master` branch builds. The configuraiton dynamically changes the S3 object key prefix based on the DNS prefix.
 
 ### Makefile Extras
-
-#### `make dist-archive`
-
-Sometimes you just want your Angular application packaged up in a plain old archive format. This `make` target products `dist.tar` in the root directory of the project should you want to ship that instead.
 
 #### `make e2e-debug`
 
