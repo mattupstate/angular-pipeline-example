@@ -21,6 +21,16 @@ if [[ -z ${DIST_IMAGE+x} ]]; then
 fi
 
 if [[ "${CI}" == "true" ]]; then
+  if [[ -z ${S3_BUCKET_URI+x} ]]; then
+    echo 'S3_BUCKET_URI must be set when CI=true'
+    exit 1
+  fi
+
+  if [[ -z ${S3_BUCKET_PUBLIC_URI+x} ]]; then
+    echo 'S3_BUCKET_PUBLIC_URI must be set when CI=true'
+    exit 1
+  fi
+
   if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
     echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
     exit 1
@@ -76,6 +86,13 @@ DockerCompose.Version=$(docker-compose --version)"
       echo "Allure environment:"
       cat e2e/allure/xml/environment.properties
       allure generate --clean --report-dir e2e/allure/html e2e/allure/xml'
+
+  docker run --rm \
+    docker run --rm \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work \
+    --entrypoint /usr/bin/tree \
+    ${TEST_IMAGE} -H '.' -L 1 --noreport --charset utf-8 e2e/allure > e2e/allure/index.html
 }
 
 publish-allure-report() {
@@ -85,7 +102,7 @@ publish-allure-report() {
   docker-compose run --rm aws \
     s3 cp --quiet --acl public-read --recursive /work/e2e/allure/ ${1}
 
-  echo "Allure report published to ${1}"
+  echo "Report published to: ${1/${S3_BUCKET_URI}/${S3_BUCKET_PUBLIC_URI}}"
 }
 
 publish-build-reports() {

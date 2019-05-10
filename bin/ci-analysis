@@ -6,6 +6,16 @@ if [[ -z ${TEST_IMAGE+x} ]]; then
 fi
 
 if [[ "${CI}" == "true" ]]; then
+  if [[ -z ${S3_BUCKET_URI+x} ]]; then
+    echo 'S3_BUCKET_URI must be set when CI=true'
+    exit 1
+  fi
+
+  if [[ -z ${S3_BUCKET_PUBLIC_URI+x} ]]; then
+    echo 'S3_BUCKET_PUBLIC_URI must be set when CI=true'
+    exit 1
+  fi
+
   if [[ -z ${MASTER_BUILD_S3_KEY_PREFIX+x} ]]; then
     echo 'MASTER_BUILD_S3_KEY_PREFIX must be set when CI=true'
     exit 1
@@ -57,9 +67,21 @@ publish-lint-results() {
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive --quiet \
-      /work/app/lint/ ${S3_KEY_PREFIX}
+      /work/${1}/lint/ ${S3_KEY_PREFIX}
 
-  echo "Lint results published to: ${S3_KEY_PREFIX}"
+  echo "Report published to: ${S3_KEY_PREFIX/${S3_BUCKET_URI}/${S3_BUCKET_PUBLIC_URI}}"
+}
+
+generate-report-index() {
+  docker run --rm \
+    --workdir /work \
+    --volume ${REPORTS_VOLUME}:/work \
+    ${TEST_IMAGE} tree -H '.' -L 1 --noreport --charset utf-8 ${1}/lint > ${1}/lint/index.html
+}
+
+generate-report-indexes() {
+  generate-report-index app
+  generate-report-index e2e
 }
 
 publish-app-lint-results() {
@@ -81,6 +103,7 @@ publish-master-reports() {
 }
 
 reports() {
+  is-ci-context && generate-report-indexes || :
   is-ci-context && publish-build-reports || :
   is-ci-context && is-master-branch && publish-master-reports || :
 }

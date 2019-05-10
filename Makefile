@@ -1,25 +1,24 @@
 SHELL := /bin/bash
 CI_SCRIPTS = $(subst ./bin/ci-,,$(shell find ./bin/ci-* -type f))
 export CI ?= false
-export PROJECT_NAME ?= $(shell jq -r '.name' package.json)
 export GIT_COMMIT_SHA ?= $(shell git rev-parse --verify HEAD)
 export GIT_COMMITED_AT ?= $(shell git show -s --format=%at HEAD)
 export GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 export GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
-export DOCKER_BUILD_CHECKSUM ?= $(shell ./bin/md5 package-lock.json Dockerfile)
 export DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,app_src_dir=/usr/src/app git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
-export DOCKER_IMAGE_BASE_NAME ?= mattupstate/$(PROJECT_NAME)
-export TEST_IMAGE ?= $(DOCKER_IMAGE_BASE_NAME):test-$(DOCKER_BUILD_CHECKSUM)
-export TEST_CONTAINER_NAME ?= test-${DOCKER_BUILD_CHECKSUM}
-export ANALYSIS_CONTAINER_NAME ?= analysis-${DOCKER_BUILD_CHECKSUM}
-export DIST_IMAGE ?= $(DOCKER_IMAGE_BASE_NAME):$(GIT_COMMIT_SHA)
-export PUBLIC_ROOT_HOSTNAME ?= $(PROJECT_NAME).mattupstate.com
-export PUBLIC_ROOT_URL ?= http://$(PUBLIC_ROOT_HOSTNAME)/
-export PUBLIC_VERSIONED_ROOT_URL ?= http://$(GIT_COMMIT_SHA).$(PUBLIC_ROOT_HOSTNAME)/
-export S3_ROOT_URI ?= s3://$(PUBLIC_ROOT_HOSTNAME)
-export MASTER_BUILD_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/builds/master/
-export RELEASE_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/releases/$(GIT_COMMIT_SHA)/
-export BUILD_S3_KEY_PREFIX ?= $(S3_ROOT_URI)/builds/${GIT_COMMIT_SHA}/
+export TEST_IMAGE ?= mattupstate/angular-pipeline-example:test-$(shell ./bin/md5 package-lock.json Dockerfile)
+export DIST_IMAGE ?= mattupstate/angular-pipeline-example:$(GIT_COMMIT_SHA)
+export S3_BUCKET ?= angular-pipeline-example.mattupstate.com
+export S3_BUCKET_URI ?= s3://$(S3_BUCKET)/
+export MASTER_BUILD_S3_KEY_PREFIX ?= $(S3_BUCKET_URI)builds/master/
+export RELEASE_S3_KEY_PREFIX ?= $(S3_BUCKET_URI)releases/$(GIT_COMMIT_SHA)/
+export BUILD_S3_KEY_PREFIX ?= $(S3_BUCKET_URI)builds/${GIT_COMMIT_SHA}/
+export PUBLIC_APP_HOSTNAME ?= angular-pipeline-example.mattupstate.com
+export DEFAULT_PUBLIC_APP_URL ?= http://$(PUBLIC_APP_HOSTNAME)/
+export VERSIONED_PUBLIC_APP_URL ?= http://$(GIT_COMMIT_SHA).$(PUBLIC_APP_HOSTNAME)/
+export AWS_REGION ?= us-east-2
+export DEFAULT_AWS_REGION ?= $(AWS_REGION)
+export S3_BUCKET_PUBLIC_URI ?= http://$(S3_BUCKET).s3-website.$(AWS_REGION).amazonaws.com/
 
 ifeq ($(CI),true)
 	DOCKER_CACHE_FROM ?= --cache-from $(TEST_IMAGE)
