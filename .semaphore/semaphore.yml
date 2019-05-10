@@ -16,22 +16,16 @@ blocks:
         - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
         - make test-image dist-image test-image-push dist-image-push
 
-  - name: Audit
-    task:
-      secrets:
-        - name: angular-pipeline-example-secrets
-      jobs:
-      - name: Dependencies
-        commands:
-          - checkout
-          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
-          - make audit
-
   - name: Tests
     task:
       secrets:
         - name: angular-pipeline-example-secrets
       jobs:
+      - name: Vulnerabilities
+        commands:
+          - checkout
+          - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin;
+          - make audit
       - name: Unit
         commands:
           - checkout
