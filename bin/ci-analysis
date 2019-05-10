@@ -41,66 +41,42 @@ clean() {
   docker volume rm ${REPORTS_VOLUME} 2>/dev/null >/dev/null || :
 }
 
-publish-build-reports() {
+publish-lint-results() {
   docker run --rm \
     --env AWS_DEFAULT_REGION \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
     mesosphere/aws-cli s3 rm --recursive --quiet \
-      ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
+      ${2%/}/reports/${1}/lint/
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
-    --volume ${PWD}/reports/app/lint:/work \
+    --volume ${REPORTS_VOLUME}:/work \
     mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive --quiet \
-      /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
+      /work/app/lint/ ${2%/}/reports/${2}/lint/
 
-  echo "Build report published to: ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/"
+  echo "Lint results published to: ${2%/}/reports/${2}/lint/"
+}
 
-  docker run --rm \
-    --env AWS_DEFAULT_REGION \
-    --env AWS_ACCESS_KEY_ID \
-    --env AWS_SECRET_ACCESS_KEY \
-    mesosphere/aws-cli s3 rm --recursive --quiet \
-      ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
+publish-app-lint-results() {
+  publish-lint-results app ${1}
+}
 
-  docker run --rm \
-    --env AWS_DEFAULT_REGION \
-    --env AWS_ACCESS_KEY_ID \
-    --env AWS_SECRET_ACCESS_KEY \
-    --workdir /work \
-    --volume ${PWD}/reports/e2e/lint:/work \
-    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
-      /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
+publish-e2e-lint-results() {
+  publish-lint-results app ${1}
+}
 
-  echo "Build report published to: ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/"
+publish-build-reports() {
+  publish-app-lint-results ${BUILD_S3_KEY_PREFIX}
+  publish-e2e-lint-results ${BUILD_S3_KEY_PREFIX}
 }
 
 publish-master-reports() {
-  docker run --rm \
-    --env AWS_DEFAULT_REGION \
-    --env AWS_ACCESS_KEY_ID \
-    --env AWS_SECRET_ACCESS_KEY \
-    --workdir /work \
-    --volume ${PWD}/reports/app/lint:/work \
-    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
-      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
-
-  echo "Master report published to: ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/"
-
-  docker run --rm \
-    --env AWS_DEFAULT_REGION \
-    --env AWS_ACCESS_KEY_ID \
-    --env AWS_SECRET_ACCESS_KEY \
-    --workdir /work \
-    --volume ${PWD}/reports/e2e/lint:/work \
-    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
-      /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
-
-  echo "Master report published to: ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/"
+  publish-app-lint-results ${MASTER_BUILD_S3_KEY_PREFIX}
+  publish-e2e-lint-results ${MASTER_BUILD_S3_KEY_PREFIX}
 }
 
 reports() {
