@@ -58,7 +58,7 @@ clean() {
 
 generate-allure-report() {
   docker-compose run --rm aws \
-    s3 cp --quiet --acl private --recursive \
+    s3 cp --quiet --recursive \
       ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX} /work/e2e/allure/xml/history/
 
   echo "Allure report history fetched from ${MASTER_ALLURE_HISTORY_S3_KEY_PREFIX}"
@@ -82,7 +82,7 @@ publish-build-reports() {
     s3 rm --quiet --recursive ${BUILD_REPORTS_S3_KEY_PREFIX}
 
   docker-compose run --rm aws \
-    s3 cp --quiet --acl private --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
+    s3 cp --quiet --acl public-read --recursive /work/e2e/ ${BUILD_REPORTS_S3_KEY_PREFIX}
 
   echo "Build report published to ${BUILD_REPORTS_S3_KEY_PREFIX}"
 }
@@ -92,7 +92,7 @@ publish-master-reports() {
     s3 rm --quiet --recursive ${MASTER_REPORTS_S3_KEY_PREFIX}
 
   docker-compose run --rm aws \
-    s3 cp --quiet --acl private --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
+    s3 cp --quiet --acl public-read --recursive /work/e2e/ ${MASTER_REPORTS_S3_KEY_PREFIX}
 
   echo "Master report published to ${MASTER_REPORTS_S3_KEY_PREFIX}"
 }

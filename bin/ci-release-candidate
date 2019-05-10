@@ -51,7 +51,7 @@ publish-artifacts() {
     --workdir /work \
     --volumes-from ${CONTAINER_NAME} \
     mesosphere/aws-cli \
-      s3 cp --acl private --recursive /usr/src/app/dist ${RELEASE_S3_KEY_PREFIX}
+      s3 cp --quiet --acl public-read --recursive /usr/src/app/dist ${RELEASE_S3_KEY_PREFIX}
 }
 
 prep

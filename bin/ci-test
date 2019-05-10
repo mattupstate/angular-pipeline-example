@@ -97,7 +97,7 @@ publish-build-reports() {
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
-    mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
       /work/app/ ${BUILD_REPORTS_S3_KEY_PREFIX}
 
   echo "Build report published to ${BUILD_REPORTS_S3_KEY_PREFIX}"
@@ -116,7 +116,7 @@ publish-master-reports() {
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
-    mesosphere/aws-cli s3 cp --quiet --acl private --recursive \
+    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
       /work/app/ ${MASTER_REPORTS_S3_KEY_PREFIX}
 
   echo "Master report published to ${MASTER_REPORTS_S3_KEY_PREFIX}"

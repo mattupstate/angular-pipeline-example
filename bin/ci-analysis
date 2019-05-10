@@ -55,7 +55,7 @@ publish-build-reports() {
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${PWD}/reports/app/lint:/work \
-    mesosphere/aws-cli s3 cp --acl private --recursive --quiet \
+    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive --quiet \
       /work ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
 
   echo "Build report published to: ${BUILD_S3_KEY_PREFIX%/}/reports/app/lint/"
@@ -73,7 +73,7 @@ publish-build-reports() {
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${PWD}/reports/e2e/lint:/work \
-    mesosphere/aws-cli s3 cp --acl private --recursive \
+    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
       /work ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
 
   echo "Build report published to: ${BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/"
@@ -86,7 +86,7 @@ publish-master-reports() {
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${PWD}/reports/app/lint:/work \
-    mesosphere/aws-cli s3 cp --acl private --recursive \
+    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
       /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/
 
   echo "Master report published to: ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/app/lint/"
@@ -97,7 +97,7 @@ publish-master-reports() {
     --env AWS_SECRET_ACCESS_KEY \
     --workdir /work \
     --volume ${PWD}/reports/e2e/lint:/work \
-    mesosphere/aws-cli s3 cp --acl private --recursive \
+    mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive \
       /work ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/
 
   echo "Master report published to: ${MASTER_BUILD_S3_KEY_PREFIX%/}/reports/e2e/lint/"
