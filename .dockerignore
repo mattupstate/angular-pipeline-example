@@ -9,6 +9,7 @@
 bin/cc-test-reporter
 bin/ci-*
 bin/md5
+bin/uuid
 dist
 docker-compose.yml
 Makefile

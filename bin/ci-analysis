@@ -27,8 +27,8 @@ if [[ "${CI}" == "true" ]]; then
   fi
 fi
 
-REPORTS_VOLUME=reports-$(uuid)
-CONTAINER_NAME=analysis-$(uuid)
+REPORTS_VOLUME=reports-$(./bin/uuid)
+CONTAINER_NAME=analysis-$(./bin/uuid)
 CONTAINER_SRC_DIR=/usr/src/app
 CONTAINER_REPORTS_ROOT_DIR=${CONTAINER_SRC_DIR}/reports
 
@@ -76,19 +76,17 @@ generate-report-index() {
   docker run --rm \
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
-    ${TEST_IMAGE} tree -H '.' -L 1 --noreport --charset utf-8 reports/${1}/lint > reports/${1}/lint/index.html
-}
-
-generate-report-indexes() {
-  generate-report-index app
-  generate-report-index e2e
+    --entrypoint /bin/sh ${TEST_IMAGE} -c '
+      tree -H '.' -L 1 --noreport --charset utf-8 reports/'${1}'/lint > reports/'${1}'/lint/index.html'
 }
 
 publish-app-lint-results() {
+  generate-report-index app
   publish-lint-results app ${1}
 }
 
 publish-e2e-lint-results() {
+  generate-report-index e2e
   publish-lint-results e2e ${1}
 }
 
@@ -103,7 +101,6 @@ publish-master-reports() {
 }
 
 reports() {
-  is-ci-context && generate-report-indexes || :
   is-ci-context && publish-build-reports || :
   is-ci-context && is-master-branch && publish-master-reports || :
 }

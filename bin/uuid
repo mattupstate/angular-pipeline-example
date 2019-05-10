@@ -1,0 +1,15 @@
+#!/bin/bash
+
+case $(uname) in
+  Darwin)
+    uuid4
+    ;;
+  Linux)
+    cat /proc/sys/kernel/random/uuid
+   ;;
+  *)
+    echo "Unsupported distro $DIST"
+    exit 1
+  ;;
+esac
+
