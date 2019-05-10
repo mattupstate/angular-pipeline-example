@@ -42,12 +42,13 @@ clean() {
 }
 
 publish-lint-results() {
+  S3_KEY_PREFIX="${2%/}/reports/${1}/lint/"
+
   docker run --rm \
     --env AWS_DEFAULT_REGION \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
-    mesosphere/aws-cli s3 rm --recursive --quiet \
-      ${2%/}/reports/${1}/lint/
+    mesosphere/aws-cli s3 rm --recursive --quiet ${S3_KEY_PREFIX}
 
   docker run --rm \
     --env AWS_DEFAULT_REGION \
@@ -56,9 +57,9 @@ publish-lint-results() {
     --workdir /work \
     --volume ${REPORTS_VOLUME}:/work \
     mesosphere/aws-cli s3 cp --quiet --acl public-read --recursive --quiet \
-      /work/app/lint/ ${2%/}/reports/${2}/lint/
+      /work/app/lint/ ${S3_KEY_PREFIX}
 
-  echo "Lint results published to: ${2%/}/reports/${2}/lint/"
+  echo "Lint results published to: ${S3_KEY_PREFIX}"
 }
 
 publish-app-lint-results() {
