@@ -1,27 +1,23 @@
 sub vcl_recv {
-  if (req.http.host ~ "^builds\.angular\-pipeline\-example\.mattupstate\.com$") {
-    set req.url = "/builds" req.url;
+  if (req.url == "/") {
+    error 900 "Root URL";
+  }
+
+  if(req.url ~ "^/(en-US|es-US)") {
+    set req.http.X-Current-Language = re.group.1;
+  }
+
+  if (req.http.host ~ "^([a-zA-Z0-9]+)\.angular\-pipeline\-example\.mattupstate\.com$") {
+    set req.http.X-Key-Prefix = "/releases/" re.group.1;
   } else {
-    if (req.url == "/") {
-      error 900 "Root URL";
-    }
+    set req.http.X-Key-Prefix = "/releases/${target_version}";
+  }
 
-    if(req.url ~ "^/(en-US|es-US)") {
-      set req.http.X-Current-Language = re.group.1;
-    }
-
-    if (req.http.host ~ "^([a-zA-Z0-9]+)\.angular\-pipeline\-example\.mattupstate\.com$") {
-      set req.http.X-Key-Prefix = "/releases/" re.group.1;
-    } else {
-      set req.http.X-Key-Prefix = "/releases/${target_version}";
-    }
-
-    if (req.url ~ "\.(js|map|css|txt|html|ico|png|gif|jpg)$") {
-      set req.url = req.http.X-Key-Prefix req.url;
-    } else {
-      # Load index.html page for Angular push-state routing
-      set req.url = req.http.X-Key-Prefix  "/" req.http.X-Current-Language "/index.html";
-    }
+  if (req.url ~ "\.(js|map|css|txt|html|ico|png|gif|jpg)$") {
+    set req.url = req.http.X-Key-Prefix req.url;
+  } else {
+    # Load index.html page for Angular push-state routing
+    set req.url = req.http.X-Key-Prefix  "/" req.http.X-Current-Language "/index.html";
   }
 
 #FASTLY recv
