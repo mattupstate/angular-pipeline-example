@@ -1,10 +1,6 @@
-/**
- * This file is for placement only. A generated file will replace this file
- * when the application is built for production.
- */
 export class BuildInfo {
-  static semVer = 'null';
-  static gitCommitHash = 'null';
-  static gitBranch = 'null';
-  static isGitDirty = true;
+  static semVer = __SEMANTIC_VERSION__;
+  static gitCommitSha = __GIT_COMMIT_SHA__;
+  static gitBranch = __GIT_BRANCH__;
+  static isGitDirty = __GIT_IS_DIRTY__;
 }

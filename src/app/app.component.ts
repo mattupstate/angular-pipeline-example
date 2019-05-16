@@ -1,9 +1,9 @@
 import { Component, LOCALE_ID, Inject } from '@angular/core';
 import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
 import { PageTitleService } from './page-title.service';
-import { BuildInfo } from '../environments/build-info';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
+import { BuildInfo } from '../environments/build-info';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +14,8 @@ export class AppComponent {
   localeId = 'en-US';
   currentUrl = '/';
   semVer = BuildInfo.semVer;
-  gitCommit = BuildInfo.gitCommitHash;
+  gitCommit = BuildInfo.gitCommitSha || 'unknown';
+  gitCommitLink = BuildInfo.gitCommitSha ? `https://github.com/mattupstate/angular-pipeline-example/commit/{{gitCommit}}` : null;
 
   constructor(
     @Inject(LOCALE_ID) localeId: string,

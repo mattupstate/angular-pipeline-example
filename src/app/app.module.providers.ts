@@ -1,9 +1,9 @@
 import { APP_INITIALIZER, LOCALE_ID, ErrorHandler } from '@angular/core';
+import { BuildInfo } from '../environments/build-info';
+import { environment } from '../environments/environment';
 import { NavigationAnalyticsService } from './analytics/navigation-analytics.service';
 import { RouterAnalyticsService } from './analytics/router-analytics.service';
 import { SegmentAnalytics } from './analytics/segment-analytics.service';
-import { BuildInfo } from '../environments/build-info';
-import { environment } from '../environments/environment';
 import { SentryErrorHandler } from './errors/sentry-error-handler';
 import { MultiErrorHandler } from './errors/multi-error-handler';
 

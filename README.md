@@ -277,6 +277,9 @@ I initially generated the Angular project using the Angular CLI. However, I adde
 
 ##### `angular.json`
 
+- Using `@angular-builders/custom-webpack:browser` for the `build` architect target to enhance the webpack configuration.
+- Using `@angular-builders/dev-server:generic` for the `serve` architect target to take advantage of the webpack configuration enhancements.
+- Using `@angular-builders/custom-webpack:karma` for the `test` architect target to take advantage of the webpack configuration enhancements.
 - Changed the `outputPath` value to simply be `dist` instead of `dist/angular-pipeline-example` for the default `build` configuration to avoid having to deal with a named directory in build tooling.
 - Added `"codeCoverage": true` to the default `test` options.
 - Removed the `production` configurations for all but for `build` as I found them to be unnecessary.

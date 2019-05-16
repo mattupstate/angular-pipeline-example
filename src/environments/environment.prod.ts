@@ -13,7 +13,7 @@ export const environment = {
   sentry: {
     enabled: true,
     environment: 'production',
-    release: BuildInfo.gitCommitHash,
+    release: BuildInfo.gitCommitSha,
     dsn: 'https://39c2faf6aaa44b319d790e1f2f77886b@sentry.io/1449637'
   }
 };

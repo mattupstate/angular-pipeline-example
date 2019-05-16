@@ -7,8 +7,7 @@
     "audit-ci": "[ $(npm audit --json | jq '.metadata.vulnerabilities | .moderate + .high + .critical > 3') = \"false\" ] || npm audit",
     "build-prod-en": "ng build -c production-en",
     "build-prod-es": "ng build -c production-es",
-    "build-prod": "npm run build-stamp && npm run build-prod-en && npm run build-prod-es",
-    "build-stamp": "./bin/build-stamp src/environments/build-info.prod.ts",
+    "build-prod": "npm run build-prod-en && npm run build-prod-es",
     "build": "ng build",
     "e2e-ci": "ng e2e -c ci",
     "e2e": "ng e2e",
@@ -41,6 +40,8 @@
     "zone.js": "~0.8.26"
   },
   "devDependencies": {
+    "@angular-builders/custom-webpack": "^7.4.3",
+    "@angular-builders/dev-server": "^7.3.1",
     "@angular-devkit/build-angular": "~0.13.8",
     "@angular/cli": "~7.3.8",
     "@angular/compiler-cli": "~7.2.13",
