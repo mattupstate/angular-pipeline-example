@@ -5,16 +5,9 @@ if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
   exit 1
 fi
 
-if [[ -z ${GIT_COMMIT_SHA+x} ]]; then
-  echo 'GIT_COMMIT_SHA is not set'
-  exit 1
-fi
-
 export NPM_SCRIPT=smoke-ci
 export SELENIUM_CHROME_IMAGE=node-chrome
 export SELENIUM_FIREFOX_IMAGE=node-firefox
-
-docker-compose down || :
 
 docker-compose up \
   --abort-on-container-exit \

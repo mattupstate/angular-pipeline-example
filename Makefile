@@ -8,7 +8,7 @@ export GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 export GIT_BRANCH_HREF ?= $(GIT_REPO_HREF)/tree/$(GIT_BRANCH)
 export GIT_COMMITED_AT ?= $(shell git show -s --format=%at HEAD)
 export GIT_IS_DIRTY ?= $(shell git diff --quiet && echo "false" || echo "true")
-export DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,app_src_dir=/usr/src/app git_branch=$(GIT_BRANCH) git_commit_sha=$(GIT_COMMIT_SHA) git_is_dirty=$(GIT_IS_DIRTY))
+export DOCKER_BUILD_ARGS ?= $(addprefix --build-arg ,app_src_dir=/usr/src/app git_branch=$(GIT_BRANCH) git_branch_href=$(GIT_BRANCH_HREF) git_commit_sha=$(GIT_COMMIT_SHA) git_commit_href=$(GIT_COMMIT_HREF) git_is_dirty=$(GIT_IS_DIRTY))
 export TEST_IMAGE ?= mattupstate/angular-pipeline-example:test-$(shell ./bin/md5 package-lock.json Dockerfile)
 export DIST_IMAGE ?= mattupstate/angular-pipeline-example:$(GIT_COMMIT_SHA)
 export S3_BUCKET ?= angular-pipeline-example.mattupstate.com

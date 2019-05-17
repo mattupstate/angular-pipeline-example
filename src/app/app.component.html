@@ -12,7 +12,7 @@
 <footer>
   <ul id="build-info">
     <li>Version: <span class="sem-ver">{{semVer}}</span></li>
-    <li *ngIf="!gitCommitHref">Commit: unknown</li>
+    <li *ngIf="!gitCommitHref">Commit: <span class="git-commit">unknown</span></li>
     <li *ngIf="!!gitCommitHref">Commit: <a class="git-commit" href="{{gitCommitHref}}">{{gitCommitSha}}</a></li>
   </ul>
 </footer>

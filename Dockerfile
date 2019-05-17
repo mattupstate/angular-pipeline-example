@@ -39,11 +39,15 @@ COPY --chown=testuser:testuser package.json package-lock.json ./
 RUN npm install
 COPY --chown=testuser:testuser . ./
 ARG git_branch
+ARG git_branch_href
 ARG git_commit_sha
+ARG git_commit_href
 ARG git_is_dirty
 ENV GIT_BRANCH=${git_branch} \
+    GIT_BRANCH_HREF=${git_branch_href} \
     GIT_COMMIT_SHA=${git_commit_sha} \
-    GIT_IS_DIRTY=${git_is_dirty}
+    GIT_COMMIT_HREF=${git_commit_href} \
+    GIT_IS_DIRTY=${git_is_dirty} \
 RUN npm run build-prod
 VOLUME /usr/src/app/dist
 
