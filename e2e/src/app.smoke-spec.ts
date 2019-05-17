@@ -2,7 +2,7 @@ import { browser } from 'protractor';
 import { App } from './app.po';
 import { HomePage } from './home.po';
 
-const GIT_COMMIT_SHA: string = process.env.GIT_COMMIT_SHA;
+const gitCommit: string = browser.params.buildInfo.gitCommit;
 
 describe('Application', () => {
   let app: App;
@@ -15,7 +15,7 @@ describe('Application', () => {
 
   it('should display the git commit', () => {
     homePage.navigateTo();
-    expect(app.getGitCommit()).toEqual(browser.params.buildInfo.gitCommit);
+    expect(app.getGitCommit()).toEqual(gitCommit.substr(0, 7));
   });
 
 });
