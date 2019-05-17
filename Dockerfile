@@ -47,7 +47,7 @@ ENV GIT_BRANCH=${git_branch} \
     GIT_BRANCH_HREF=${git_branch_href} \
     GIT_COMMIT_SHA=${git_commit_sha} \
     GIT_COMMIT_HREF=${git_commit_href} \
-    GIT_IS_DIRTY=${git_is_dirty} \
+    GIT_IS_DIRTY=${git_is_dirty}
 RUN npm run build-prod
 VOLUME /usr/src/app/dist
 
