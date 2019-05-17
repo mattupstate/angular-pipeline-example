@@ -14,12 +14,8 @@ export class AppComponent {
   localeId = 'en-US';
   currentUrl = '/';
   semVer = BuildInfo.semVer;
-  gitCommit = BuildInfo.gitCommitSha || 'unknown';
-  gitCommitLink = BuildInfo.gitCommitSha
-    ? `https://github.com/mattupstate/angular-pipeline-example/commit/${
-        BuildInfo.gitCommitSha
-      }`
-    : null;
+  gitCommitSha = BuildInfo.gitCommitSha;
+  gitCommitHref = BuildInfo.gitCommitHref;
 
   constructor(
     @Inject(LOCALE_ID) localeId: string,
