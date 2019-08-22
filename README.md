@@ -102,11 +102,11 @@ Once I completed the `make` + `docker` based pipeline I integrated the build pip
 
 ### Semaphore CI
 
-[Semaphore CI](semaphoreci.com) is a public CI service. It took only a few tweaks to the pipeline to use the same tooling I use locally. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine, which is precisely what I was looking. Couldn't really ask for more! The Semaphore configuration is located in the `.semaphore/` directory.
+[Semaphore CI](https://semaphoreci.com) is a public CI service. It took only a few tweaks to the pipeline to use the same tooling I use locally. I was a bit surprised, honestly, how easy it was. I didn't have to tell Semaphore to install any of the software I was using. The pipeline exectues exactly how it does on my own machine, which is precisely what I was looking. Couldn't really ask for more! The Semaphore configuration is located in the `.semaphore/` directory.
 
 ### Code Climate
 
-[Code Climate](https://codeclimate.com) is a public code quality service. Having learned about it recently (I used to use [coveralls.io](coveralls.io)) I figured I'd try it out. It's relatively simple to setup. I've integrated their test reporter tool in the `make test` target. Execution of the test reporter is conditional on being in the CI context. View the project's public Code Climate page [here](https://codeclimate.com/github/mattupstate/angular-pipeline-example).
+[Code Climate](https://codeclimate.com) is a public code quality service. Having learned about it recently (I used to use [coveralls.io](https://coveralls.io)) I figured I'd try it out. It's relatively simple to setup. I've integrated their test reporter tool in the `make test` target. Execution of the test reporter is conditional on being in the CI context. View the project's public Code Climate page [here](https://codeclimate.com/github/mattupstate/angular-pipeline-example).
 
 ### Buildkite
 
